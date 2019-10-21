@@ -81,10 +81,12 @@ class Control:
         self.load_message_current_state() # This line will get about current velocity for you
 
     def listen_target_velocity( self , message ):
-        None
+        with self.lock_target_velocity :
+            self.message_target_velocity = message
         
     def listen_state( self , message ):
-        None
+        with self.lock_current_state :
+            self.message_current_state = message
 
     # linear and angular type will help you decision about wnat error from state or velocity
     #   this function will split into case linear/angular velocity if true use velocity

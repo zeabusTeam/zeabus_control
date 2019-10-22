@@ -17,7 +17,7 @@ include_directories(
     ${zeabus_library_INCLUDE_DIRS}
 )
 
-fenerate_dynamic_reconfigure_options(
+generate_dynamic_reconfigure_options(
     cfg/PidZTransform.cfg
 )
 

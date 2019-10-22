@@ -1,7 +1,7 @@
 coefficients: 5
 d_pitch: 0
 d_roll: 0
-d_x: 0
+d_x: 0.25
 d_y: 0
 d_yaw: 0
 d_z: 0
@@ -12,9 +12,9 @@ i_y: 0
 i_yaw: 0
 i_z: 0
 p_pitch: 0
-p_roll: 0
-p_x: 0
+p_roll: 0.25
+p_x: 0.25
 p_y: 0
 p_yaw: 0
-p_z: 0
+p_z: 0.25
 sampling_time: 0.1

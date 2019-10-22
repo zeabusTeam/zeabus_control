@@ -10,6 +10,7 @@
 # ref01 : http://wiki.ros.org/dynamic_reconfigure/Tutorials/UsingTheDynamicReconfigurePythonClient
 # ref02 : http://wiki.ros.org/dynamic_reconfigure/Tutorials/HowToWriteYourFirstCfgFile
 # ref03 : http://wiki.ros.org/dynamic_reconfigure/Tutorials/SettingUpDynamicReconfigureForANode%28python%29
+# ref04 : https://docs.python.org/2.6/library/string.html
 
 import rospy
 
@@ -24,14 +25,14 @@ class TuneParameter:
     def __init__( self , pid_id ):
         
         self.pid_id = pid_id
-
+        
         self.reset_parameter( 0.1 , 5 )
-
-        self.server_parameter = Server( PidZTransformConfig , self.callback )
 
         self.yaml_handle = YamlHandle( "zeabus_control" , "parameter" , "pid_value.yaml" )
 
         self.load_parameter()
+
+        self.server_parameter = Server( PidZTransformConfig , self.callback )
 
     def reset_parameter( self , sampling_time , coefficients ):
         self.data_config = { "p_x" : 0 , "i_x" : 0 , "d_x" : 0 ,
@@ -66,10 +67,21 @@ class TuneParameter:
 
     def callback( self, config , level ):
         print( "Data receive is ===================================================== " )
-        print( config )
-        print( "Owm config is ======================================================= " )
-        print( self.data_config )
+        print( config.keys() )
         if( level == 0 ):
-            None
+            self.data_config = config
+        self.report_configure()
         return self.data_config
+
+    def report_configure( self ):
+        print( "---------------------------------------------")
+        print( "Type   |  P_value   |   I_value   |   D_value")
+        for key in ( "x" , "y" , "z" , "roll" , "pitch" , "yaw" ):
+            print( "{0:<7}|{1:9.2f}   |{2:10.2f}   |{3:9.2f}".format( key, 
+                    self.data_config[ "p_" + key ],
+                    self.data_config[ "i_" + key ],
+                    self.data_config[ "d_" + key ] ) )
+        print( "sampling_time is " + str( self.data_config["sampling_time"] ) )
+        print( "coefficients is " + str( self.data_config["coefficients"] ) )
+        print( "---------------------------------------------")
             

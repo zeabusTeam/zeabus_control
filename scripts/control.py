@@ -22,6 +22,7 @@ from zeabus.math.quaternion import Quaternion
 import zeabus.ros.message
 import zeabus_robot as robot
 from parameter import ControlParameter
+from tune_parameter import TuneParameter
 
 from zeabus_utility.msg import Int16Array8
 
@@ -35,6 +36,7 @@ class Control:
         self.pid = { "x" : PIDZTransform() , "y" : PIDZTransform() ,
                 "z" : PIDZTransform() , "roll" : PIDZTransform() , 
                 "pitch" : PIDZTransform() , "yaw" : PIDZTransform() }
+        self.tuning = TuneParameter( self.pid )
         # Below variable use to collect error for input PID
         self.error = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 , 
                 "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }

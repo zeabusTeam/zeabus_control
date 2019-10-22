@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# FILE			: control_parameter.py
+# FILE			: tune_parameter.py
 # AUTHOR		: K.Supasan
 # CREATE ON		: 2019, October 22 (UTC+0)
 # MAINTAINER	: K.Supasan
@@ -18,7 +18,7 @@ from dynamic_reconfigure.server import Server
 
 from zeabus.control.pid_z_transform import PIDZTransform
 
-class ControlParameter:
+class TuneParameter:
 
     def __init__( self , pid_id ):
         

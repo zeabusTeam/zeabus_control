@@ -26,3 +26,5 @@ class ControlParameter:
 
         self.target_frame = rospy.get_param('target_frame' , 'base_link_target')
         self.frame = rospy.get_param( 'own_frame' , 'base_link' )
+
+        self.rate = rospy.get_param( 'frequency' , 10 )

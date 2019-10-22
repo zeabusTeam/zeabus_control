@@ -19,6 +19,7 @@ from nav_msgs.msg import Odometry
 from thread import allocate_lock
 from zeabus.control.pid_z_transform import PIDZTransform
 from zeabus.control.lookup_pwn_force import  LookupPwmForce
+from zeabus.math.quaternion import Quaternion
 from parameter import ControlParameter
 
 class Control:
@@ -33,6 +34,9 @@ class Control:
                 "pitch" : PIDZTransform() , "yaw" : PIDZTransform() }
         # Below variable use to collect error for input PID
         self.error = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 , 
+                "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
+        # Below variable we collect answer for you
+        self.target_force_odom_frame = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 , 
                 "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
         # Below variable use to collect mode if true use target velocity from subscribe topic
         #   if false you calculate target velocity from state of robot 
@@ -77,8 +81,19 @@ class Control:
         )
 
     def active( self ):
-        self.load_message_target_velocity() # This line will get about target velocity from you 
-        self.load_message_current_state() # This line will get about current velocity for you
+        rate = rospy.Rate( self.system_param.rate )
+        while not rospy.is_shutdown() :
+            # This line will get about target velocity from you 
+            self.load_message_target_velocity() 
+            # This line will get about current velocity for you
+            self.load_message_current_state()
+            # Below line will get error value
+            self.calculate_error()
+
+            for key in [ "x" , "y" , "z" , "roll" , "pitch" , "yaw" ]:
+                self.target_force_odom_frame[ key ] = self.pid[ key ].calculate( self.error[ key ] )
+
+            self.calculate_force_thruster()
 
     def listen_target_velocity( self , message ):
         with self.lock_target_velocity :
@@ -87,6 +102,11 @@ class Control:
     def listen_state( self , message ):
         with self.lock_current_state :
             self.message_current_state = message
+
+    # Because we have put input PID from odom_frame x , y , z. Next I have to convert data to 
+    #   base link frame only linear type.
+    def calculate_force_thruster( self ):
+        
 
     # linear and angular type will help you decision about wnat error from state or velocity
     #   this function will split into case linear/angular velocity if true use velocity
@@ -115,6 +135,20 @@ class Control:
                 0 ,
                 self.load_target_velocity.angular.z
                 ) [ self.mode["yaw"] ]
+        # I have to bound target velocity
+        self.boundary_target_velocity()
+        self.error["x"] = self.save_target_velocity.twist.linear.x -
+                self.load_current_state.twist.twist.linear.x
+        self.error["y"] = self.save_target_velocity.twist.linear.y -
+                self.load_current_state.twist.twist.linear.y
+        self.error["z"] = self.save_target_velocity.twist.linear.z -
+                self.load_current_state.twist.twist.linear.z
+        self.error["roll"] = self.save_target_velocity.twist.angular.x -
+                self.load_current_state.twist.twist.angular.x
+        self.error["pitch"] = self.save_target_velocity.twist.angular.y -
+                self.load_current_state.twist.twist.angular.y
+        self.error["yaw"] = self.save_target_velocity.twist.angular.z -
+                self.load_current_state.twist.twist.angular.z
 
     def boundary_target_velocity( self ):
         self.save_target_velocity.twist.linear.x = self.get_save_target_velocity(
@@ -137,11 +171,8 @@ class Control:
                 self.save_target_velocity.twist.angular.z )
 
     def get_save_target_velocity( self , target , save ):
-        sign = 1.0
-        if( target < 0 ):
-            sign = -1.0
         if abs( target - save ) > 0.5 :
-            save += sign*0.5
+            save += ( -0.5 , 0.5 ) [ target > 0 ]
         else:
             save = target
         return save

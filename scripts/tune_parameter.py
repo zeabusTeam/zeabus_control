@@ -17,6 +17,7 @@ from zeabus_control.cfg import PidZTransformConfig
 from dynamic_reconfigure.server import Server
 
 from zeabus.control.pid_z_transform import PIDZTransform
+from zeabus.ros.yaml_handle import YamlHandle
 
 class TuneParameter:
 
@@ -24,7 +25,51 @@ class TuneParameter:
         
         self.pid_id = pid_id
 
+        self.reset_parameter( 0.1 , 5 )
+
         self.server_parameter = Server( PidZTransformConfig , self.callback )
 
+        self.yaml_handle = YamlHandle( "zeabus_control" , "parameter" , "pid_value.yaml" )
+
+        self.load_parameter()
+
+    def reset_parameter( self , sampling_time , coefficients ):
+        self.data_config = { "p_x" : 0 , "i_x" : 0 , "d_x" : 0 ,
+                "p_y" : 0 , "i_y" : 0 , "d_y" : 0 ,
+                "p_z" : 0 , "i_z" : 0 , "d_z" : 0 ,
+                "p_roll" : 0 , "i_roll" : 0 , "d_roll" : 0 ,
+                "p_pitch" : 0 , "i_pitch" : 0 , "d_pitch" : 0 ,
+                "p_yaw" : 0 , "i_yaw" : 0 , "d_yaw" : 0 ,
+                "sampling_time" : sampling_time ,
+                "coefficients" : coefficients
+        }
+
+    def load_parameter( self ):
+        if self.yaml_handle.check_file():
+            self.data_config = self.yaml_handle.load_data()
+        else:
+            print( "{} file doesn\'t exists reset parameter".format( self.yaml_handle.fullpath ) )
+            self.reset_parameter( 0.1 , 5 )
+
+        self.set_parameter()
+
+    def save_parameter( self ):
+        self.yaml_handle.save_data( self.data_config )
+
+    def set_parameter( self ):
+        for key in [ "roll" , "pitch" , "yaw" , "x" , "y" , "z" ]:
+            self.pid_id[ key ].set_parameter( self.data_config[ "p_" + key ] ,
+                    self.data_config[ "i_" + key ] ,
+                    self.data_config[ "d_" + key ] , 
+                    self.data_config[ "sampling_time" ] ,
+                    self.data_config[ "coefficients" ] )
+
     def callback( self, config , level ):
-        return config        
+        print( "Data receive is ===================================================== " )
+        print( config )
+        print( "Owm config is ======================================================= " )
+        print( self.data_config )
+        if( level == 0 ):
+            None
+        return self.data_config
+            

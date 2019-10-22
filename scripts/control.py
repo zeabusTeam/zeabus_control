@@ -107,7 +107,8 @@ class Control:
 
             self.publish_command_thruster.publish( self.message_command )
 
-            rate.sleep() 
+            rate.sleep()
+        self.tuning.save_parameter() 
 
     def listen_target_velocity( self , message ):
         with self.lock_target_velocity :

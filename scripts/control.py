@@ -92,6 +92,7 @@ class Control:
 
     def active( self ):
         rate = rospy.Rate( self.system_param.rate )
+        rate.sleep()
         while not rospy.is_shutdown() :
             # This line will get about target velocity from you 
             self.load_message_target_velocity() 
@@ -105,7 +106,9 @@ class Control:
 
             self.calculate_force_thruster()
 
-            self.publish_command_thruster.publish( self.message_command ) 
+            self.publish_command_thruster.publish( self.message_command )
+
+            rate.sleep() 
 
     def listen_target_velocity( self , message ):
         with self.lock_target_velocity :

@@ -11,7 +11,6 @@
 import rospy
 import math
 import numpy as np
-import zeabus.control.zeabus_robot as robot
 
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
@@ -20,7 +19,11 @@ from thread import allocate_lock
 from zeabus.control.pid_z_transform import PIDZTransform
 from zeabus.control.lookup_pwn_force import  LookupPwmForce
 from zeabus.math.quaternion import Quaternion
+import zeabus.ros.message
+import zeabus_robot as robot
 from parameter import ControlParameter
+
+from zeabus_utility.msg import Int16Array8
 
 class Control:
 
@@ -57,28 +60,35 @@ class Control:
         self.lock_target_velocity = thread.allocate_lock()
 
         # Below variable use to get value from message by with operator of locker
-        self.load_target_velocity = TwistStamped()
-        self.load_current_state = Odometry()
+        self.load_target_velocity = message.twist_stamped()
+        self.load_current_state = message.odometry()
         # Below variable have for boundary jump value of target
-        self.real_target_velocity = TwistStamped()
-        self.save_target_velocity = TwistStamped()
+        self.real_target_velocity = message.twist_stamped()
+        self.save_target_velocity = message.twist_stamped()
 
         # Below variable is use to save message from subscribe
-        self.message_target_velocity = TwistStamped()
-        self.message_current_state = Odometry()
+        self.message_target_velocity = message.twist_stamped()
+        self.message_current_state = message.odometry()
+        # Below variable is command to send for command thruster
+        self.message_command = Int16Array8()
+        self,message_command.header.frame = self.system_param.frame
 
         # set up ros part
         self.subscribe_target_velocity = rospy.Subscriber(
-            self.system_param.topic_target_velocity,
-            TwistStamped , 
-            self.listen_target_velocity
+                self.system_param.topic_target_velocity,
+                TwistStamped , 
+                self.listen_target_velocity
         )
 
-        self.current_state = rospy.Subscriber(
-            self.system_param.topic_state ,
-            Odometry ,
-            self.listen_state
+        self.subscribe_current_state = rospy.Subscriber(
+                self.system_param.topic_state ,
+                Odometry ,
+                self.listen_state
         )
+
+        self.publish_command_thruster = rospy.Publisher( self.system_param.topic_output ,
+                Int16Array8 ,
+                queue_size = 1 )
 
     def active( self ):
         rate = rospy.Rate( self.system_param.rate )
@@ -95,6 +105,8 @@ class Control:
 
             self.calculate_force_thruster()
 
+            self.publish_command_thruster.publish( self.message_command ) 
+
     def listen_target_velocity( self , message ):
         with self.lock_target_velocity :
             self.message_target_velocity = message
@@ -105,9 +117,39 @@ class Control:
 
     # Because we have put input PID from odom_frame x , y , z. Next I have to convert data to 
     #   base link frame only linear type.
+    #   In this we don't get state of robot from tf data because we have receive value from
+    #   subscribe listen state
     def calculate_force_thruster( self ):
+        # set quaternion of robot
+        robot_orientation = Quaternion( ( self.load_current_state.pose.pose.orientation.x,
+                self.load_current_state.pose.pose.orientation.y,
+                self.load_current_state.pose.pose.orientation.z,
+                self.load_current_state.pose.pose.orientation.w ) )
         
+        robot_linear_force = robot_orientation.inverse_rotation( ( 
+                self.target_force_odom_frame[ "x" ], 
+                self.target_force_odom_frame[ "y" ], 
+                self.target_force_odom_frame[ "z" ], 
+                0 ) )
 
+        sum_force = numpy.array( [ robot_linear_force.vector[0] ,
+                robot_linear_force.vector[1],
+                robot_linear_force.vector[2],
+                self.target_force_odom_frame[ "roll" ],
+                self.target_force_odom_frame[ "pitch"],
+                self.target_force_odom_frame[ "yaw"] ] )
+
+        thruster_force = numpy.matmul( robot.direction_inverse.T , sum_force.T )
+        # Now we get about force of ndividual thruster
+
+        command_throttle = []
+        for run in range( 0 , 8 ):
+            temp = int( self.lookup.find_pwm( thruster_force[ run ] ) )
+            command_throttle.append( temp ) 
+
+        self.message_command.header.stamp = rospy.get_rostime()
+        self.message_command.data = tuple( command_throttle ) 
+        
     # linear and angular type will help you decision about wnat error from state or velocity
     #   this function will split into case linear/angular velocity if true use velocity
     def calculate_error( self ):

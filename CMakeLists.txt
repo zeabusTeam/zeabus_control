@@ -6,6 +6,7 @@ find_package( catkin REQUIRED COMPONENTS
     nav_msgs
     geometry_msgs
     zeabus_utility
+    dynamic_reconfigure
 )
 
 find_package( Boost REQUIRED COMPONENTS )
@@ -16,9 +17,13 @@ include_directories(
     ${zeabus_library_INCLUDE_DIRS}
 )
 
+fenerate_dynamic_reconfigure_options(
+    cfg/PidZTransform.cfg
+)
+
 catkin_package(
     CATKIN_DEPENDS roscpp
-    DEPENDS Boost
+    DEPENDS Boost ${PROJECT_NAME}_gencfg
 )
 
 add_executable( control src/main.cpp )

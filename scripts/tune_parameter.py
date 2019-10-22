@@ -24,7 +24,7 @@ class TuneParameter:
         
         self.pid_id = pid_id
 
-        self.server_parameter = Server( PIDZTransform , self.callback )
+        self.server_parameter = Server( PidZTransformConfig , self.callback )
 
     def callback( self, config , level ):
-        print( repr( config ) )        
+        return config        

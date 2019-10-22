@@ -11,11 +11,11 @@
 import numpy
 import math
 
-cos_45 = math.cos( math.radian( 45 ) )
-sin_45 = math.sin( math.radian( 45 ) )
+cos_45 = math.cos( math.radians( 45 ) )
+sin_45 = math.sin( math.radians( 45 ) )
 
 # set direction of thuster
-direction = numpy.array([
+direction_linear = numpy.array([
     [0 , 0 , 1],
     [0 , 0 , 1],
     [0 , 0 , 1],
@@ -51,6 +51,6 @@ angular = numpy.array( [
 ] )
 
 direction = numpy.concatenate(
-    ( direction , angular ), axis=1 )
+    ( direction_linear , angular ), axis=1 )
 
 direction_inverse = numpy.linalg.pinv( direction )

@@ -17,9 +17,9 @@ from nav_msgs.msg import Odometry
 
 from thread import allocate_lock
 from zeabus.control.pid_z_transform import PIDZTransform
-from zeabus.control.lookup_pwn_force import  LookupPwmForce
+from zeabus.control.lookup_pwm_force import  LookupPwmForce
 from zeabus.math.quaternion import Quaternion
-import zeabus.ros.message
+from zeabus.ros import message
 import zeabus_robot as robot
 from parameter import ControlParameter
 from tune_parameter import TuneParameter
@@ -52,14 +52,11 @@ class Control:
         self.system_param = ControlParameter()
         # look compare find thruster can look on zeabus_library/python_src/zeabus/control
         self.lookup = LookupPwmForce( self.system_param.table_file['package'] , 
-                self.system_param.table_file['derectory'] , 
+                self.system_param.table_file['directory'] , 
                 self.system_param.table_file['file'] )
-        # self.mode will collect you will have to use transformation to decision
-        #   target velocity or listen target velocity by time out
-        self.mode = False
 
-        self.lock_current_state = thread.allocate_lock()
-        self.lock_target_velocity = thread.allocate_lock()
+        self.lock_current_state = allocate_lock()
+        self.lock_target_velocity = allocate_lock()
 
         # Below variable use to get value from message by with operator of locker
         self.load_target_velocity = message.twist_stamped()
@@ -73,7 +70,7 @@ class Control:
         self.message_current_state = message.odometry()
         # Below variable is command to send for command thruster
         self.message_command = Int16Array8()
-        self,message_command.header.frame = self.system_param.frame
+        self.message_command.header.frame_id = self.system_param.frame
 
         # set up ros part
         self.subscribe_target_velocity = rospy.Subscriber(
@@ -137,14 +134,14 @@ class Control:
                 self.target_force_odom_frame[ "z" ], 
                 0 ) )
 
-        sum_force = numpy.array( [ robot_linear_force.vector[0] ,
+        sum_force = np.array( [ robot_linear_force.vector[0] ,
                 robot_linear_force.vector[1],
                 robot_linear_force.vector[2],
                 self.target_force_odom_frame[ "roll" ],
                 self.target_force_odom_frame[ "pitch"],
                 self.target_force_odom_frame[ "yaw"] ] )
 
-        thruster_force = numpy.matmul( robot.direction_inverse.T , sum_force.T )
+        thruster_force = np.matmul( robot.direction_inverse.T , sum_force.T )
         # Now we get about force of ndividual thruster
 
         command_throttle = []
@@ -160,42 +157,43 @@ class Control:
     def calculate_error( self ):
         self.real_target_velocity.twist.linear.x = ( 
                 0 ,
-                self.load_target_velocity.twist.x
+                self.load_target_velocity.twist.linear.x
                 ) [ self.mode["x"] ]
         self.real_target_velocity.twist.linear.y = ( 
                 0 ,
-                self.load_target_velocity.twist.y
+                self.load_target_velocity.twist.linear.y
                 ) [ self.mode["y"] ]
         self.real_target_velocity.twist.linear.z = ( 
                 0 ,
-                self.load_target_velocity.twist.z
+                self.load_target_velocity.twist.linear.z
                 ) [ self.mode["z"] ]
         self.real_target_velocity.twist.angular.x = ( 
                 0 ,
-                self.load_target_velocity.angular.x
+                self.load_target_velocity.twist.angular.x
                 ) [ self.mode["roll"] ]
         self.real_target_velocity.twist.angular.y = ( 
                 0 ,
-                self.load_target_velocity.angular.y
+                self.load_target_velocity.twist.angular.y
                 ) [ self.mode["pitch"] ]
         self.real_target_velocity.twist.angular.z = ( 
                 0 ,
-                self.load_target_velocity.angular.z
+                self.load_target_velocity.twist.angular.z
                 ) [ self.mode["yaw"] ]
         # I have to bound target velocity
         self.boundary_target_velocity()
-        self.error["x"] = self.save_target_velocity.twist.linear.x -
-                self.load_current_state.twist.twist.linear.x
-        self.error["y"] = self.save_target_velocity.twist.linear.y -
-                self.load_current_state.twist.twist.linear.y
-        self.error["z"] = self.save_target_velocity.twist.linear.z -
-                self.load_current_state.twist.twist.linear.z
-        self.error["roll"] = self.save_target_velocity.twist.angular.x -
-                self.load_current_state.twist.twist.angular.x
-        self.error["pitch"] = self.save_target_velocity.twist.angular.y -
-                self.load_current_state.twist.twist.angular.y
-        self.error["yaw"] = self.save_target_velocity.twist.angular.z -
-                self.load_current_state.twist.twist.angular.z
+
+        self.error["x"] = ( self.save_target_velocity.twist.linear.x - 
+                self.load_current_state.twist.twist.linear.x )
+        self.error["y"] = ( self.save_target_velocity.twist.linear.y - 
+                self.load_current_state.twist.twist.linear.y )
+        self.error["z"] = ( self.save_target_velocity.twist.linear.z - 
+                self.load_current_state.twist.twist.linear.z )
+        self.error["roll"] = ( self.save_target_velocity.twist.angular.x - 
+                self.load_current_state.twist.twist.angular.x )
+        self.error["pitch"] = ( self.save_target_velocity.twist.angular.y - 
+                self.load_current_state.twist.twist.angular.y )
+        self.error["yaw"] = ( self.save_target_velocity.twist.angular.z - 
+                self.load_current_state.twist.twist.angular.z )
 
     def boundary_target_velocity( self ):
         self.save_target_velocity.twist.linear.x = self.get_save_target_velocity(
@@ -230,7 +228,7 @@ class Control:
 
     def load_message_current_state( self ):
         with self.lock_current_state:
-            self.load_current_state =  self.,message_current_state
+            self.load_current_state =  self.message_current_state
 
 if __name__=='__main__':
     control_node = Control()

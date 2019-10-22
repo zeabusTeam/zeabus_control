@@ -3,6 +3,9 @@ project( zeabus_control )
 
 find_package( catkin REQUIRED COMPONENTS 
     roscpp
+    nav_msgs
+    geometry_msgs
+    zeabus_utility
 )
 
 find_package( Boost REQUIRED COMPONENTS )

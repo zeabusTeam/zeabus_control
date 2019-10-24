@@ -24,7 +24,7 @@ class ControlParameter:
         self.topic_target_velocity = rospy.get_param('topic_target','/control/target_velocity' )
         self.topic_state = rospy.get_param('topic_state','/localize/state' )
 
-        self.topic_output = rospy.get_param( 'topic_output' , '/control/command_throttle' ) 
+        self.topic_output = rospy.get_param( 'topic_output' , '/control/throttle' ) 
 
 
         self.target_frame = rospy.get_param('target_frame' , 'base_link_target')

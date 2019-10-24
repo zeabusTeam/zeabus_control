@@ -19,7 +19,7 @@ from thread import allocate_lock
 from zeabus.control.pid_z_transform import PIDZTransform
 from zeabus.control.lookup_pwm_force import  LookupPwmForce
 from zeabus.math.quaternion import Quaternion
-from zeabus.ros import message
+from zeabus.ros import message as new_message
 import zeabus_robot as robot
 from parameter import ControlParameter
 from tune_parameter import TuneParameter
@@ -59,15 +59,15 @@ class Control:
         self.lock_target_velocity = allocate_lock()
 
         # Below variable use to get value from message by with operator of locker
-        self.load_target_velocity = message.twist_stamped()
-        self.load_current_state = message.odometry()
+        self.load_target_velocity = new_message.twist_stamped()
+        self.load_current_state = new_message.odometry()
         # Below variable have for boundary jump value of target
-        self.real_target_velocity = message.twist_stamped()
-        self.save_target_velocity = message.twist_stamped()
+        self.real_target_velocity = new_message.twist_stamped()
+        self.save_target_velocity = new_message.twist_stamped()
 
         # Below variable is use to save message from subscribe
-        self.message_target_velocity = message.twist_stamped()
-        self.message_current_state = message.odometry()
+        self.message_target_velocity = new_message.twist_stamped()
+        self.message_current_state = new_message.odometry()
         # Below variable is command to send for command thruster
         self.message_command = Int16Array8()
         self.message_command.header.frame_id = self.system_param.frame

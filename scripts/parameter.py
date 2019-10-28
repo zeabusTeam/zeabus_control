@@ -22,7 +22,7 @@ class ControlParameter:
         }
 
         self.topic_target_velocity = rospy.get_param('topic_target','/control/target_velocity' )
-        self.topic_state = rospy.get_param('topic_state','/localize/state' )
+        self.topic_state = rospy.get_param('topic_state','/localize/zeabus' )
 
         self.topic_output = rospy.get_param( 'topic_output' , '/control/throttle' ) 
 

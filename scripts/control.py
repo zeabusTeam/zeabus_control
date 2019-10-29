@@ -11,6 +11,7 @@
 import rospy
 import math
 import numpy as np
+import tf
 
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
@@ -42,6 +43,14 @@ class Control:
                 "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
         # Below variable we collect answer for you
         self.target_force_odom_frame = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 , 
+                "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
+        self.target_force_robot_frame = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 , 
+                "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
+        # Below varialbe use to collect different or error in pose of robot
+        self.error_tf = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 ,
+                "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
+        # Below variable use to collect target velocity was calculate from error_tf
+        self.velocity_tf = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 ,
                 "roll" : 0.0 , "pitch" : 0.0 , "yaw" : 0.0 }
         # Below variable use to collect mode if true use target velocity from subscribe topic
         #   if false you calculate target velocity from state of robot 
@@ -89,6 +98,8 @@ class Control:
                 Int16Array8 ,
                 queue_size = 1 )
 
+        self.listener = tf.TransformListener()
+
     def active( self ):
         rate = rospy.Rate( self.system_param.rate )
         rate.sleep()
@@ -107,7 +118,9 @@ class Control:
 
             self.publish_command_thruster.publish( self.message_command )
 
+            self.report_control()
             rate.sleep()
+            
         self.tuning.save_parameter() 
 
     def listen_target_velocity( self , message ):
@@ -135,6 +148,13 @@ class Control:
                 self.target_force_odom_frame[ "z" ], 
                 0 ) )
 
+        self.target_force_robot_frame["x"] = robot_linear_force.vector[0]
+        self.target_force_robot_frame["y"] = robot_linear_force.vector[1]
+        self.target_force_robot_frame["z"] = robot_linear_force.vector[2]
+        self.target_force_robot_frame["roll"] = self.target_force_odom_frame["roll"]
+        self.target_force_robot_frame["pitch"] = self.target_force_odom_frame["pitch"]
+        self.target_force_robot_frame["yaw"] = self.target_force_odom_frame["yaw"]
+
         sum_force = np.array( [ robot_linear_force.vector[0] ,
                 robot_linear_force.vector[1],
                 robot_linear_force.vector[2],
@@ -156,6 +176,7 @@ class Control:
     # linear and angular type will help you decision about wnat error from state or velocity
     #   this function will split into case linear/angular velocity if true use velocity
     def calculate_error( self ):
+        self.update_error_tf()
         self.real_target_velocity.twist.linear.x = ( 
                 0 ,
                 self.load_target_velocity.twist.linear.x
@@ -187,8 +208,9 @@ class Control:
                 self.load_current_state.twist.twist.linear.x )
         self.error["y"] = ( self.save_target_velocity.twist.linear.y - 
                 self.load_current_state.twist.twist.linear.y )
-        self.error["z"] = ( self.save_target_velocity.twist.linear.z - 
-                self.load_current_state.twist.twist.linear.z )
+        self.error["z"] = self.error_tf["z"]
+#        self.error["z"] = ( self.save_target_velocity.twist.linear.z - 
+#                self.load_current_state.twist.twist.linear.z )
         self.error["roll"] = ( self.save_target_velocity.twist.angular.x - 
                 self.load_current_state.twist.twist.angular.x )
         self.error["pitch"] = ( self.save_target_velocity.twist.angular.y - 
@@ -223,6 +245,24 @@ class Control:
             save = target
         return save
 
+    def update_error_tf( self ):
+        try:
+            ( translation , rotation ) = self.listener.lookupTransform( 
+                    self.system_param.target_frame,
+                    self.system_param.frame,
+                    rospy.Time(0) )
+        except( tf.LookupException , tf.ConnectivityException, tf.ExtrapolationException ):
+            translation = ( 0 , 0 , 0 )
+            rotation = ( 0 , 0 , 0 , 1 )
+
+        self.error_tf[ "x" ] = translation[0]
+        self.error_tf[ "y" ] = translation[1]
+        self.error_tf[ "z" ] = translation[2]
+        temp_euler = Quaternion( rotation ).get_euler()
+        self.error_tf[ "roll" ] = temp_euler[2]
+        self.error_tf[ "pitch" ] = temp_euler[1]
+        self.error_tf[ "yaw" ] = temp_euler[0]
+
     def load_message_target_velocity( self ):
         with self.lock_target_velocity:
             self.load_target_velocity = self.message_target_velocity
@@ -231,6 +271,42 @@ class Control:
         with self.lock_current_state:
             self.load_current_state =  self.message_current_state
 
+    def report_control( self ):
+        print("CONTROL REPORTED ============================================================\n")
+        print("ERROR_POSITION :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.error_tf["x"] , self.error_tf["y"] , self.error_tf["z"] ,
+                self.error_tf["roll"] , self.error_tf["pitch"] , self.error_tf["yaw"] ) )
+        print("PLAN_VELOCITY  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.velocity_tf["x"] , self.velocity_tf["y"] , self.velocity_tf["z"] ,
+                self.velocity_tf["roll"] , self.velocity_tf["pitch"] , self.velocity_tf["yaw"] ) )
+        print("real_target_vel:{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.real_target_velocity.twist.linear.x, self.real_target_velocity.twist.linear.y, 
+                self.real_target_velocity.twist.linear.z, self.real_target_velocity.twist.angular.x, 
+                self.real_target_velocity.twist.angular.y, 
+                self.real_target_velocity.twist.angular.z ) )
+        print("save_target_vel:{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.save_target_velocity.twist.linear.x, self.save_target_velocity.twist.linear.y, 
+                self.save_target_velocity.twist.linear.z, self.save_target_velocity.twist.angular.x, 
+                self.save_target_velocity.twist.angular.y, 
+                self.save_target_velocity.twist.angular.z ) )
+        temp = self.load_current_state.twist.twist
+        print("CURRENT_VEL    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+                temp.linear.x , temp.linear.y , temp.linear.z,
+                temp.angular.x, temp.angular.y, temp.angular.z ) ) 
+        print("ERROR_VELOCITY :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.error["x"] , self.error["y"] , self.error["z"] ,
+                self.error["roll"] , self.error["pitch"] , self.error["yaw"] ) )
+        print("ODOM_FORCE     :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.target_force_odom_frame["x"], self.target_force_odom_frame["y"], 
+                self.target_force_odom_frame["z"], self.target_force_odom_frame["roll"], 
+                self.target_force_odom_frame["pitch"] , self.target_force_odom_frame["yaw"] ) )
+        print("ROBOT_FORCE    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.target_force_robot_frame["x"], self.target_force_robot_frame["y"], 
+                self.target_force_robot_frame["z"], self.target_force_robot_frame["roll"], 
+                self.target_force_robot_frame["pitch"] , self.target_force_robot_frame["yaw"] ) )
+        print("PWM COMMAND : " + repr( self.message_command.data ) )
+        print("\n")
+        
 if __name__=='__main__':
     control_node = Control()
     control_node.active()

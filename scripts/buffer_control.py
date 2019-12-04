@@ -99,7 +99,7 @@ class BufferControl:
                 buffer_throttle_data = active_throttle_data
             header.stamp = rospy.get_rostime()
             try:
-    #            self.client_throttle( header , buffer_throttle_data )
+                self.client_throttle( header , buffer_throttle_data )
                 message.header = header
                 message.data = buffer_throttle_data 
                 self.publish_throttle.publish( message )
@@ -132,6 +132,7 @@ class BufferControl:
     def listen_throttle_message( self , message ):
         with self.lock_throttle_message :
             self.throttle_message = message
+            self.throttle_message.header.stamp = rospy.get_rostime()
 
 if __name__=='__main__':
     buffer_node = BufferControl()

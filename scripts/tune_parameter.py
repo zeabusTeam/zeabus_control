@@ -46,7 +46,7 @@ class TuneParameter:
         }
 
     def load_parameter( self ):
-        if self.yaml_handle.check_file():
+        if self.yaml_handle.check_file() :
             self.data_config = self.yaml_handle.load_data()
         else:
             print( "{} file doesn\'t exists reset parameter".format( self.yaml_handle.fullpath ) )
@@ -66,10 +66,9 @@ class TuneParameter:
                     self.data_config[ "coefficients" ] )
 
     def callback( self, config , level ):
-        print( "Data receive is ===================================================== " )
-        print( config.keys() )
         if( level == 0 ):
             self.data_config = config
+            self.set_parameter()
         self.report_configure()
         return self.data_config
 

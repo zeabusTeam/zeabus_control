@@ -18,6 +18,7 @@ from nav_msgs.msg import Odometry
 
 from thread import allocate_lock
 from zeabus.control.pid_z_transform import PIDZTransform
+from zeabus.control.pid import PID
 from zeabus.control.lookup_pwm_force import  LookupPwmForce
 from zeabus.math.quaternion import Quaternion
 from zeabus.ros import message as new_message
@@ -34,9 +35,12 @@ class Control:
         rospy.init_node( 'control' )
         # Mode to control type of control how to get target velocity
         # PID module can look on zeabus_library/python_src/zeabus/control
-        self.pid = { "x" : PIDZTransform() , "y" : PIDZTransform() ,
-                "z" : PIDZTransform() , "roll" : PIDZTransform() , 
-                "pitch" : PIDZTransform() , "yaw" : PIDZTransform() }
+#        self.pid = { "x" : PIDZTransform() , "y" : PIDZTransform() ,
+#                "z" : PIDZTransform() , "roll" : PIDZTransform() , 
+#                "pitch" : PIDZTransform() , "yaw" : PIDZTransform() }
+        self.pid = { "x" : PID() , "y" : PID() ,
+                "z" : PID() , "roll" : PID() , 
+                "pitch" : PID() , "yaw" : PID() }
         self.tuning = TuneParameter( self.pid )
         # Below variable use to collect error for input PID
         self.error = { "x" : 0.0 , "y" : 0.0 , "z" : 0.0 , 
@@ -113,6 +117,7 @@ class Control:
 
             for key in [ "x" , "y" , "z" , "roll" , "pitch" , "yaw" ]:
                 self.target_force_odom_frame[ key ] = self.pid[ key ].calculate( self.error[ key ] )
+            
 
             self.calculate_force_thruster()
 
@@ -248,8 +253,8 @@ class Control:
     def update_error_tf( self ):
         try:
             ( translation , rotation ) = self.listener.lookupTransform( 
-                    self.system_param.target_frame,
                     self.system_param.frame,
+                    self.system_param.target_frame,
                     rospy.Time(0) )
         except( tf.LookupException , tf.ConnectivityException, tf.ExtrapolationException ):
             translation = ( 0 , 0 , 0 )
@@ -293,7 +298,7 @@ class Control:
         print("CURRENT_VEL    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
                 temp.linear.x , temp.linear.y , temp.linear.z,
                 temp.angular.x, temp.angular.y, temp.angular.z ) ) 
-        print("ERROR_VELOCITY :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("ERROR PID      :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.error["x"] , self.error["y"] , self.error["z"] ,
                 self.error["roll"] , self.error["pitch"] , self.error["yaw"] ) )
         print("ODOM_FORCE     :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 

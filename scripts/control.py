@@ -17,8 +17,8 @@ from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 
 from thread import allocate_lock
-from zeabus.control.pid_z_transform import PIDZTransform
-from zeabus.control.pid import PID
+#from zeabus.control.pid_z_transform import PIDZTransform as PID
+from zeabus.control.pid import PID as PID
 from zeabus.control.lookup_pwm_force import  LookupPwmForce
 from zeabus.math.quaternion import Quaternion
 from zeabus.ros import message as new_message
@@ -102,6 +102,8 @@ class Control:
                 Int16Array8 ,
                 queue_size = 1 )
 
+        self.saturation = [0 , 0 , 0 , 0 , 0 , 0  ]
+
         self.listener = tf.TransformListener()
 
     def active( self ):
@@ -115,10 +117,12 @@ class Control:
             # Below line will get error value
             self.calculate_error()
 
-            for key in [ "x" , "y" , "z" , "roll" , "pitch" , "yaw" ]:
-                self.target_force_odom_frame[ key ] = self.pid[ key ].calculate( self.error[ key ] )
+            run = 0
+            for key in  [ "x" , "y" , "z" , "roll" , "pitch" , "yaw" ]:
+                self.target_force_odom_frame[ key ] = self.pid[ key ].calculate( self.error[ key ] ,
+                        self.saturation[ run ] )
+                run += 1
             
-
             self.calculate_force_thruster()
 
             self.publish_command_thruster.publish( self.message_command )
@@ -176,8 +180,16 @@ class Control:
             command_throttle.append( temp ) 
 
         self.message_command.header.stamp = rospy.get_rostime()
-        self.message_command.data = tuple( command_throttle ) 
+        self.message_command.data = tuple( command_throttle )
+
+        real_force = np.zeros( 8 )
+        for run in range( 0 , 8 ):
+            real_force[ run ] = self.lookup.force_table[ command_throttle[ run ] + 1000 ]
         
+        real_force = np.matmul( real_force , robot.direction )
+        for run in range( 0 , 6 ):
+            self.saturation[ run ] =  -real_force[ run ] + sum_force[ run ]
+
     # linear and angular type will help you decision about wnat error from state or velocity
     #   this function will split into case linear/angular velocity if true use velocity
     def calculate_error( self ):
@@ -277,7 +289,7 @@ class Control:
             self.load_current_state =  self.message_current_state
 
     def report_control( self ):
-        print("CONTROL REPORTED ============================================================\n")
+        print("=========================== CONTROL REPORTED  =================================\n")
         print("ERROR_POSITION :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.error_tf["x"] , self.error_tf["y"] , self.error_tf["z"] ,
                 self.error_tf["roll"] , self.error_tf["pitch"] , self.error_tf["yaw"] ) )

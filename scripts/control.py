@@ -226,14 +226,17 @@ class Control:
         self.error["y"] = ( self.save_target_velocity.twist.linear.y - 
                 self.load_current_state.twist.twist.linear.y )
         self.error["z"] = self.error_tf["z"]
+        self.error["roll"] = self.error_tf["roll"]
+        self.error["pitch"] = self.error_tf["pitch"]
+        self.error["yaw"] = self.error_tf["yaw"]
 #        self.error["z"] = ( self.save_target_velocity.twist.linear.z - 
 #                self.load_current_state.twist.twist.linear.z )
-        self.error["roll"] = ( self.save_target_velocity.twist.angular.x - 
-                self.load_current_state.twist.twist.angular.x )
-        self.error["pitch"] = ( self.save_target_velocity.twist.angular.y - 
-                self.load_current_state.twist.twist.angular.y )
-        self.error["yaw"] = ( self.save_target_velocity.twist.angular.z - 
-                self.load_current_state.twist.twist.angular.z )
+#        self.error["roll"] = ( self.save_target_velocity.twist.angular.x - 
+#                self.load_current_state.twist.twist.angular.x )
+#        self.error["pitch"] = ( self.save_target_velocity.twist.angular.y - 
+#                self.load_current_state.twist.twist.angular.y )
+#        self.error["yaw"] = ( self.save_target_velocity.twist.angular.z - 
+#                self.load_current_state.twist.twist.angular.z )
 
     def boundary_target_velocity( self ):
         self.save_target_velocity.twist.linear.x = self.get_save_target_velocity(

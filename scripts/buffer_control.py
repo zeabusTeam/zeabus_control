@@ -99,13 +99,13 @@ class BufferControl:
                 buffer_throttle_data = active_throttle_data
             header.stamp = rospy.get_rostime()
             try:
-                self.client_throttle( header , buffer_throttle_data )
+                self.client_throttle( header , tuple( buffer_throttle_data ) )
                 message.header = header
                 message.data = buffer_throttle_data 
                 self.publish_throttle.publish( message )
             except rospy.ServiceException , e : 
                 rospy.logfatal( "Failure to write pwm response from haredware")
-            count_loop = ( count_loop + 1 ) % 3
+#            count_loop = ( count_loop + 1 ) % 3
             rate.sleep()
                 
     def load_twist_message( self ):

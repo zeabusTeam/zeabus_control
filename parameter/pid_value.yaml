@@ -1,3 +1,4 @@
-{coefficients: 5, d_pitch: 0, d_roll: 0, d_x: 0, d_y: 0, d_yaw: 0, d_z: 0, i_pitch: 0,
-  i_roll: 0, i_x: 0, i_y: 0, i_yaw: 0, i_z: 0.5, p_pitch: 0, p_roll: 0, p_x: 0, p_y: 0,
-  p_yaw: 0, p_z: 1.0, sampling_time: 0.1}
+{coefficients: 5, d_pitch: 0, d_roll: 0, d_x: 0, d_y: 0, d_yaw: 0, d_z: 0.05, i_pitch: 0,
+  i_roll: 0, i_x: 0, i_y: 0, i_yaw: 0.01, i_z: 0.2, offset_pitch: 0, offset_roll: 0,
+  offset_x: 0, offset_y: 0.0, offset_yaw: 0, offset_z: -6.0, p_pitch: 0, p_roll: 0,
+  p_x: 0, p_y: 0, p_yaw: 0.5, p_z: 1.0, sampling_time: 0.04}

@@ -41,6 +41,8 @@ class TuneParameter:
                 "p_roll" : 0 , "i_roll" : 0 , "d_roll" : 0 ,
                 "p_pitch" : 0 , "i_pitch" : 0 , "d_pitch" : 0 ,
                 "p_yaw" : 0 , "i_yaw" : 0 , "d_yaw" : 0 ,
+                "offset_x" : 0 , "offset_y" : 0 , "offset_z" : 0,
+                "offset_roll" : 0 , "offset_pitch" : 0 , "offset_yaw" : 0,
                 "sampling_time" : sampling_time ,
                 "coefficients" : coefficients
         }
@@ -63,7 +65,8 @@ class TuneParameter:
                     self.data_config[ "i_" + key ] ,
                     self.data_config[ "d_" + key ] , 
                     self.data_config[ "sampling_time" ] ,
-                    self.data_config[ "coefficients" ] )
+                    self.data_config[ "coefficients" ] ,
+                    self.data_config[ "offset_" + key ] )
 
     def callback( self, config , level ):
         if( level == 0 ):

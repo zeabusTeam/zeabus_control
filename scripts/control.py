@@ -293,34 +293,34 @@ class Control:
 
     def report_control( self ):
         print("=========================== CONTROL REPORTED  =================================\n")
-        print("ERROR_POSITION :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("ERROR_POSITION :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.error_tf["x"] , self.error_tf["y"] , self.error_tf["z"] ,
                 self.error_tf["roll"] , self.error_tf["pitch"] , self.error_tf["yaw"] ) )
-        print("PLAN_VELOCITY  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("PLAN_VELOCITY  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.velocity_tf["x"] , self.velocity_tf["y"] , self.velocity_tf["z"] ,
                 self.velocity_tf["roll"] , self.velocity_tf["pitch"] , self.velocity_tf["yaw"] ) )
-        print("real_target_vel:{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("real_target_vel:{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.real_target_velocity.twist.linear.x, self.real_target_velocity.twist.linear.y, 
                 self.real_target_velocity.twist.linear.z, self.real_target_velocity.twist.angular.x, 
                 self.real_target_velocity.twist.angular.y, 
                 self.real_target_velocity.twist.angular.z ) )
-        print("save_target_vel:{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("save_target_vel:{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.save_target_velocity.twist.linear.x, self.save_target_velocity.twist.linear.y, 
                 self.save_target_velocity.twist.linear.z, self.save_target_velocity.twist.angular.x, 
                 self.save_target_velocity.twist.angular.y, 
                 self.save_target_velocity.twist.angular.z ) )
         temp = self.load_current_state.twist.twist
-        print("CURRENT_VEL    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+        print("CURRENT_VEL    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
                 temp.linear.x , temp.linear.y , temp.linear.z,
                 temp.angular.x, temp.angular.y, temp.angular.z ) ) 
-        print("ERROR PID      :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("ERROR PID      :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.error["x"] , self.error["y"] , self.error["z"] ,
                 self.error["roll"] , self.error["pitch"] , self.error["yaw"] ) )
-        print("ODOM_FORCE     :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("ODOM_FORCE     :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.target_force_odom_frame["x"], self.target_force_odom_frame["y"], 
                 self.target_force_odom_frame["z"], self.target_force_odom_frame["roll"], 
                 self.target_force_odom_frame["pitch"] , self.target_force_odom_frame["yaw"] ) )
-        print("ROBOT_FORCE    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+        print("ROBOT_FORCE    :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.target_force_robot_frame["x"], self.target_force_robot_frame["y"], 
                 self.target_force_robot_frame["z"], self.target_force_robot_frame["roll"], 
                 self.target_force_robot_frame["pitch"] , self.target_force_robot_frame["yaw"] ) )

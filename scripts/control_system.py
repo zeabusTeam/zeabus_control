@@ -91,13 +91,18 @@ class ControlSystem :
             self.load_state()
 
             for key , run in _PARING_ORDER :
-                self.target_force_odom_frame[ run ] =  self.system[ key ].calculate( 
-                        self.odom_error[ run ], 
-                        self.saturation[ run ] ) )
+                if self.odom_error.mask[run ] :
+                    self.target_force_odom_frame[ run ] =  self.system[ key ].calculate( 
+                            self.odom_error.target[ run ], 
+                            self.saturation[ run ] ) )
+                else:
+                    self.target_force_odom_frame[ run ] = 0
 
             self.calculate_force_thruster()
 
             self.publish_command_thruster.publish( self.message_command )
+
+            self.__report()
 
         self.tuning.save_parameter()
 
@@ -144,6 +149,29 @@ class ControlSystem :
         real_force = np.matmul( real_force , robot.direction )
         for run in range( 0 , 6 ):
             self.saturation[ run ] =  -real_force[ run ] + sum_force[ run ]
+
+    def __report( self ):
+        print( "=============== REPORTED ===============" )
+        print( "input error :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+                self.odom_error.target[0] , self.odom_error.target[1] , 
+                self.odom_error.target[2] , self.odom_error.target[3] , 
+                self.odom_error.target[4] , self.odom_error.target[5] ) )
+        print( "mask error  :{:6}{:6}{:6}{:6}{:6}{:6}".format(
+                self.odom_error.mask[0] , self.odom_error.mask[1] , 
+                self.odom_error.mask[2] , self.odom_error.mask[3] , 
+                self.odom_error.mask[4] , self.odom_error.mask[5] ) )
+        print( "odom force  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+                self.target_force_odom_frame[0] , self.target_force_odom_frame[1] , 
+                self.target_force_odom_frame[2] , self.target_force_odom_frame[3] , 
+                self.target_force_odom_frame[4] , self.target_force_odom_frame[5] ) )
+        print( "robot force :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+                self.target_force_robot_frame[0] , self.target_force_robot_frame[1] , 
+                self.target_force_robot_frame[2] , self.target_force_robot_frame[3] , 
+                self.target_force_robot_frame[4] , self.target_force_robot_frame[5] ) )
+        print( "saturation  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+                self.saturation[0] , self.saturation[1] , self.saturation[2] , 
+                self.saturation[3] , self.saturation[4] , self.saturation[5] ) )
+        print( "Throttle command : " + self.message_command.data + "\n" )
 
 #   End part function for activate and start part callback
     def callback_odom_error( self , message ):

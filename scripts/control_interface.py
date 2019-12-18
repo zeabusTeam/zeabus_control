@@ -110,6 +110,31 @@ class ControlInterface :
             self.output_odom_error.target = tuple( temp )
             self.publish_odom_error( self.output_odom_error )
 
+            self.__report()
+
+        rospy.signal_shutdown( "node control_system end program")
+
+    def __report( self ):
+        print( "========== REPORT INTERFACE ==========")
+        print( "ERROR_STATE :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.error_state[0] , self.error_state[1] , self.error_state[2],
+                self.error_state[3] , self.error_state[4] , self.error_state[5] ) ) 
+        print( "TARGET_VEL  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.odom_target_velocity.target[0] , self.odom_target_velocity.target[1] , 
+                self.odom_target_velocity.target[2] , self.odom_target_velocity.target[3] , 
+                self.odom_target_velocity.target[4] , self.odom_target_velocity.target[5] ) ) 
+        print( "CURRENT_VEL :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
+                self.current_velocity[0] , self.current_velocity[1] , self.current_velocity[2] , 
+                self.current_velocity[3] , self.current_velocity[4] , self.current_velocity[5] ) ) 
+        print( "ERROR_VEL   :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}\n".format( 
+                self.output_odom_error.target[0] , self.output_odom_error.target[1] , 
+                self.output_odom_error.target[2] , self.output_odom_error.target[3] , 
+                self.output_odom_error.target[4] , self.output_odom_error.target[5] ) ) 
+        print( "ERROR_MASH error  :{:6}{:6}{:6}{:6}{:6}{:6}".format(
+                self.output_odom_error.mask[0] , self.output_odom_error.mask[1] , 
+                self.output_odom_error.mask[2] , self.output_odom_error.mask[3] , 
+                self.output_odom_error.mask[4] , self.output_odom_error.mask[5] ) )
+
 #   end part activate function and start part update error position 
 
     def load_current_velocity( self ):

@@ -22,13 +22,13 @@ from zeabus.ros.yaml_handle import YamlHandle
 
 class TuneParameter:
 
-    def __init__( self , pid_id ):
+    def __init__( self , pid_id , package , directory , file_name ):
         
         self.pid_id = pid_id
         
         self.reset_parameter( 0.1 , 5 )
 
-        self.yaml_handle = YamlHandle( "zeabus_control" , "parameter" , "pid_value.yaml" )
+        self.yaml_handle = YamlHandle( package , directory , file_name )
 
         self.load_parameter()
 

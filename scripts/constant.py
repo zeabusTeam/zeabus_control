@@ -16,6 +16,8 @@ class Interface( object ):
     _TOPIC_INPUT_STATE = "localize/zeabus"
     _TOPIC_INPUT_TARGET_VELOCITY = "control/velocity"
     _RATE = 30
+    _FRAME_ERROR_PARENT = "base_link"
+    _FRAME_ERROR_CHILD = "base_link_target"
 
 class System( object ):
     _PACKAGE = "zeabus_control"

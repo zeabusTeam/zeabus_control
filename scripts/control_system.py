@@ -48,7 +48,7 @@ class ControlSystem :
         self.odom_error = nm.control_command()
         # use Publish data to control_thruster node
         self.message_command = Int16Array8()
-        self.message_command,header.frame_id = "base_link"
+        self.message_command.header.frame_id = "base_link"
         # PID varialbe
         self.system = { "x" : PID() , "y" : PID() , "z" : PID() , 
                 "roll" : PID() , "pitch" : PID() , "yaw" : PID() }
@@ -59,6 +59,7 @@ class ControlSystem :
         self.lookup = LookupPwmForce( pm._PACKAGE , pm._DIRECTORY , pm._FILE_TABLE )
 
         self.target_force_odom_frame = [ 0 , 0 , 0 , 0 , 0 , 0 ]
+        self.target_force_robot_frame = [ 0 , 0 , 0 , 0 , 0 , 0 ]
 
         self.saturation = [0 , 0 , 0 , 0 , 0 , 0 ]
 
@@ -94,7 +95,7 @@ class ControlSystem :
                 if self.odom_error.mask[run ] :
                     self.target_force_odom_frame[ run ] =  self.system[ key ].calculate( 
                             self.odom_error.target[ run ], 
-                            self.saturation[ run ] ) )
+                            self.saturation[ run ] )
                 else:
                     self.target_force_odom_frame[ run ] = 0
 
@@ -171,7 +172,7 @@ class ControlSystem :
         print( "saturation  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
                 self.saturation[0] , self.saturation[1] , self.saturation[2] , 
                 self.saturation[3] , self.saturation[4] , self.saturation[5] ) )
-        print( "Throttle command : " + self.message_command.data + "\n" )
+        print( "Throttle command : " + repr( self.message_command.data ) + "\n" )
 
 #   End part function for activate and start part callback
     def callback_odom_error( self , message ):
@@ -208,5 +209,5 @@ class ControlSystem :
 #   end part of callback and load data
 
 if __name__=='__main__' :
-    control_system_node = Control()
+    control_system_node = ControlSystem()
     control_system_node.activate()

@@ -55,7 +55,7 @@ class ControlInterface :
         self.listener_tf = tf.TransformListener()
 
         self.control_velocity = ( ctv.StepVelocity( ctv.TABLEX ), ctv.StepVelocity( ctv.TABLEY ),
-                ctv.StepVelocity( ctv.TABLEZ ) , ctv.StepVelocity( cty.TABLEROLL ),
+                ctv.StepVelocity( ctv.TABLEZ ) , ctv.StepVelocity( ctv.TABLEROLL ),
                 ctv.StepVelocity( ctv.TABLEPITCH ) , ctv.StepVelocity( ctv.TABLEYAW ) )
 
         for run in range( 0 , 6 ):
@@ -100,15 +100,18 @@ class ControlInterface :
  
             if self.load_current_velocity():
                 for run in range( 0 , 6 ):
-                    temp.append( self.odom_target_velocity.target[ run ] - 
-                            self.current_velocity[ run ] )
+                    if run != 2 :
+                        temp.append( self.odom_target_velocity.target[ run ] - 
+                                self.current_velocity[ run ] )
+                    else:
+                        temp.append( self.error_state[ run ] )
             else:
                 temp = (0, 0, 0, 0, 0, 0 )
                 print( "Warning Faliure to ger current velocity")
                 
             self.output_odom_error.header.stamp = self.time_stamp
             self.output_odom_error.target = tuple( temp )
-            self.publish_odom_error( self.output_odom_error )
+            self.publish_odom_error.publish( self.output_odom_error )
 
             self.__report()
 
@@ -126,11 +129,11 @@ class ControlInterface :
         print( "CURRENT_VEL :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.current_velocity[0] , self.current_velocity[1] , self.current_velocity[2] , 
                 self.current_velocity[3] , self.current_velocity[4] , self.current_velocity[5] ) ) 
-        print( "ERROR_VEL   :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}\n".format( 
+        print( "ERROR_VEL   :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.output_odom_error.target[0] , self.output_odom_error.target[1] , 
                 self.output_odom_error.target[2] , self.output_odom_error.target[3] , 
                 self.output_odom_error.target[4] , self.output_odom_error.target[5] ) ) 
-        print( "ERROR_MASH error  :{:6}{:6}{:6}{:6}{:6}{:6}".format(
+        print( "ERROR_MASK  :{:6}{:6}{:6}{:6}{:6}{:6}\n".format(
                 self.output_odom_error.mask[0] , self.output_odom_error.mask[1] , 
                 self.output_odom_error.mask[2] , self.output_odom_error.mask[3] , 
                 self.output_odom_error.mask[4] , self.output_odom_error.mask[5] ) )
@@ -147,6 +150,7 @@ class ControlInterface :
                         self.message_state.twist.twist.linear.y,
                         self.message_state.twist.twist.linear.z,
                         0 ) )
+                print("set quaternion")
                 self.current_velocity[3] = self.message_state.twist.twist.angular.x
                 self.current_velocity[4] = self.message_state.twist.twist.angular.y
                 self.current_velocity[5] = self.message_state.twist.twist.angular.z
@@ -154,7 +158,7 @@ class ControlInterface :
                 activate = True
 
         if ( self.time_stamp - self.time_stamp_state ).to_sec() < pm._TIMEOUT and not activate:
-            temp = self.current_quaternion.inverse_rotation( twist_quaternion )
+            temp = self.current_quaternion.inverse_rotation( twist_quaternion.vector )
             self.current_velocity[ 0 ] = temp.vector[ 0 ]
             self.current_velocity[ 1 ] = temp.vector[ 1 ]
             self.current_velocity[ 2 ] = temp.vector[ 2 ]
@@ -163,9 +167,9 @@ class ControlInterface :
 
     def get_error_position( self ):
         try:
-            ( translation , rotation ) = self.listener_tf.lookupTransform( 
-                    self.system_param.frame,
-                    self.system_param.target_frame,
+            ( translation , rotation ) = self.listener_tf.lookupTransform(
+                    pm._FRAME_ERROR_PARENT,
+                    pm._FRAME_ERROR_CHILD, 
                     rospy.Time(0) )
         except( tf.LookupException , tf.ConnectivityException, tf.ExtrapolationException ):
             translation = ( 0 , 0 , 0 )
@@ -184,15 +188,15 @@ class ControlInterface :
     def callback_state( self , message ):
         with self.lock_state:
             self.message_state = message
-        self.current_quaternion.set_quaternion(
+        self.current_quaternion.set_quaternion( (
                 self.message_state.pose.pose.orientation.x,
                 self.message_state.pose.pose.orientation.y,
                 self.message_state.pose.pose.orientation.z,
                 self.message_state.pose.pose.orientation.w
-        )
+        ) )
 
 #   End part callback function
 
-if __name__=='__main___':
+if __name__=='__main__':
     control_interface_node = ControlInterface()
     control_interface_node.activate()

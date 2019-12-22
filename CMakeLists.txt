@@ -18,7 +18,7 @@ include_directories(
 )
 
 generate_dynamic_reconfigure_options(
-    cfg/PidZTransform.cfg
+    cfg/PIDandSaturation.cfg
 )
 
 catkin_package(

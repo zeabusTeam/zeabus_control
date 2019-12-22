@@ -25,7 +25,7 @@ class System( object ):
     _FILE_TABLE = "throttle_force_table.txt"
     _FILE_TUNE = "pid_value.yaml"
     _TIMEOUT = 1.0
-    _RATE = 30
+    _RATE = 15
     _TOPIC_INPUT_ERROR = Interface._TOPIC_OUTPUT_ERROR
     _TOPIC_INPUT_STATE = Interface._TOPIC_INPUT_STATE
     _TOPIC_OUTPUT_COMMAND_THROTTLE = "/control/throttle"

@@ -9,6 +9,9 @@
 
 # REFERENCE
 
+# PARAMETER
+__PRINT_REPORTER__ = True
+
 import rospy
 import math
 import numpy as np
@@ -103,7 +106,10 @@ class ControlSystem :
 
             self.publish_command_thruster.publish( self.message_command )
 
-            self.__report()
+            if __PRINT_REPORTER__ :
+                self.__report()
+            else:
+                None
 
         self.tuning.save_parameter()
 

@@ -31,7 +31,7 @@ class TuneParameter:
 
         self.load_parameter()
 
-        self.server_parameter = Server( PidZTransformConfig , self.callback )
+        self.server_parameter = Server( PIDandSaturationConfig , self.callback )
 
     def reset_parameter( self , sampling_time , coefficients ):
         self.data_config = { "p_x" : 0 , "i_x" : 0 , "d_x" : 0 ,
@@ -42,7 +42,8 @@ class TuneParameter:
                 "p_yaw" : 0 , "i_yaw" : 0 , "d_yaw" : 0 ,
                 "offset_x" : 0 , "offset_y" : 0 , "offset_z" : 0,
                 "offset_roll" : 0 , "offset_pitch" : 0 , "offset_yaw" : 0,
-                ""
+                "s_x" : 0, "s_y" : 0 , "s_z" : 0,
+                "s_roll" : 0, "s_pitch" : 0 , "s_yaw" : 0,
                 "sampling_time" : sampling_time ,
                 "coefficients" : coefficients
         }
@@ -63,7 +64,8 @@ class TuneParameter:
         for key in [ "roll" , "pitch" , "yaw" , "x" , "y" , "z" ]:
             self.pid_id[ key ].set_parameter( self.data_config[ "p_" + key ] ,
                     self.data_config[ "i_" + key ] ,
-                    self.data_config[ "d_" + key ] , 
+                    self.data_config[ "d_" + key ] ,
+                    self.data_config[ "s_" + key ] , 
                     self.data_config[ "sampling_time" ] ,
                     self.data_config[ "coefficients" ] ,
                     self.data_config[ "offset_" + key ] )
@@ -76,13 +78,14 @@ class TuneParameter:
         return self.data_config
 
     def report_configure( self ):
-        print( "---------------------------------------------")
-        print( "Type   |  P_value   |   I_value   |   D_value")
+        print( "----------------------------------------------------------")
+        print( "Type   |  P_value   |   I_value   |   D_value   |  S_value")
         for key in ( "x" , "y" , "z" , "roll" , "pitch" , "yaw" ):
-            print( "{0:<7}|{1:9.2f}   |{2:10.2f}   |{3:9.2f}".format( key, 
+            print( "{0:<7}|{1:9.2f}   |{2:10.2f}   |{3:10.2f}   |{4:9.2f}".format( key, 
                     self.data_config[ "p_" + key ],
                     self.data_config[ "i_" + key ],
-                    self.data_config[ "d_" + key ] ) )
+                    self.data_config[ "d_" + key ],
+                    self.data_config[ "s_" + key ] ) )
         print( "sampling_time is " + str( self.data_config["sampling_time"] ) )
         print( "coefficients is " + str( self.data_config["coefficients"] ) )
         print( "---------------------------------------------")

@@ -17,6 +17,8 @@
 
 #include    <vector>
 
+#include    <cstdlib>
+
 #include    <iostream>
 
 #include    <ros/ros.h>
@@ -49,8 +51,8 @@ extern double parameter[4];
 extern bool avaliable_new_parameter;
 extern std::mutex lock_dynamic_reconfigure;
 
-void compare_data( const std::vector< int16_t >* vector_throttle,
-        const std::vector< uint32_t >* vector_erpm,
+void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
+        const boost::array< uint32_t , 8 >* vector_erpm,
         const double* positive_table,
         const double* negative_table,
-        std::vector< double >* current_force );
+        boost::array< double , 8 >* current_force );

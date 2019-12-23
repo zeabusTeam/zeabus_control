@@ -63,6 +63,27 @@ int main( int argv , char** argc )
 
 #endif // _DYNAMIC_RECONFIGURE_ 
 
+    double* positive_table, *negative_table;
+    int* temporay_table;
+    unsigned int num_line;
+    zeabus::FileCSV fh;
+
+    fh.open( zeabus_ros::get_full_path( "zeabus_control" , "parameter" , "rpm_forward_table.csv") );
+    (void)fh.count_line( &num_line );
+    positive_table = ( double*) malloc( sizeof( double ) * num_line );
+    temporay_table = ( int* ) malloc( sizeof( int ) * num_line );
+    zeabus::extract_csv_type_2( &fh , temporay_table , positive_table );
+    free( temporay_table );
+    fh.close();
+    
+    fh.open( zeabus_ros::get_full_path( "zeabus_control" , "parameter" , "rpm_reverse_table.csv") );
+    (void)fh.count_line( &num_line );
+    negative_table = ( double*) malloc( sizeof( double ) * num_line );
+    temporay_table = ( int* ) malloc( sizeof( int ) * num_line );
+    zeabus::extract_csv_type_2( &fh , temporay_table , negative_table );
+    free( temporay_table );
+    fh.close();
+
 // =========================== PART ROS VARIABLE ============================ 
     // Part receive target force
     std::mutex lock_target_force;
@@ -79,24 +100,26 @@ int main( int argv , char** argc )
     // Part set client for send dshot or throttle
     ros::ServiceClient client_throttle = nh.serviceClient< zeabus_utility::SendThrottle >(
             topic_send_throttle );
-    zeabus_utility::ServiceDepth throttle_handle;
+    zeabus_utility::SendThrottle throttle_handle;
     zeabus_utility::Int16Array8 message_throttle;
     ros::Publisher publish_throttle = nh.advertise< zeabus_utility::Int16Array8 >(
             topic_send_throttle , 1 );
     // Part send output current force
     zeabus_utility::Float64Array8 message_current_force;
     ros::Publisher publish_current_force = nh.advertise< zeabus_utility::Float64Array8 >(
-            topic_output_force , 1 ); 
+            topic_force_output , 1 ); 
 
 // =========================== PART VARIABLE FOR ACTIVATE =======================
-    std::vector< double > vector_target_force;
-    vector_target_force.assign( 8 , 0);
-    std::vector< double > vector_current_force;
-    vector_current_force.assign( 8  , 0 );
-    std::vector< int16_t > vector_throttle;
-    vector_throttle.assign( 8 , 0 );
-    std::vector< uint32_t > vector_erpm;
-    vector_erpm.assign( 8 , 0 );
+    boost::array< double , 8 > vector_addition_throttle;
+    vector_addition_throttle.assign( 0 );
+    boost::array< double , 8 > vector_target_force;
+    vector_target_force.assign( 0 );
+    boost::array< double , 8 > vector_current_force;
+    vector_current_force.assign( 0 );
+    boost::array< int16_t , 8 > vector_throttle;
+    vector_throttle.assign( 0 );
+    boost::array< uint32_t , 8 > vector_erpm;
+    vector_erpm.assign( 0 );
 
     ros::Rate rate( frequency );
     ros::Time time_stamp = ros::Time::now(); // use to collect now time
@@ -126,7 +149,7 @@ check_target_force:
         } // condition use target from publish
         else
         {
-            vector_target_force.assign( 8 , 0 ); 
+            vector_target_force.assign( 0 ); 
         } // condition set zero
         lock_target_force.unlock();
 check_current_force:
@@ -134,19 +157,48 @@ check_current_force:
         for( unsigned int run = 0 ; run < 8 ; run++ )
         {
             vector_erpm[ run ] = message_current_telemetry.ax_telemetry_value[ run ].erpm;
+            message_current_force.header.stamp = message_current_telemetry.header.stamp;
         }
         lock_current_telemetry.unlock();
+        compare_data( &vector_throttle , &vector_erpm , //  previous data and new data
+                positive_table , negative_table , // table for find force
+                &vector_current_force ); // result
+        message_current_force.data = vector_current_force;
+        publish_current_force.publish( message_current_force ); // publish current force
+compute_throttle_force:
+        // Will run loop for compute control get throttle
+        for( unsigned int run = 0 ; run < 8 ; run++ )
+        {
+            vector_addition_throttle.at( run ) = pid[ run ].calculate(
+                    vector_target_force.at( run ) - vector_current_force.at( run ),
+                    message_current_force.header.stamp,
+                    0 ); // saturation = 0 
+            if( fabs( vector_addition_throttle.at( run ) ) > 250 )
+            {
+                vector_addition_throttle.at( run ) = 
+                        copysign( vector_addition_throttle.at( run ) , 250 );
+            }
+            if( equal( vector_target_force.at( run ) , 0 ) )
+            {
+                vector_throttle.at( run ) = 0;
+            }
+            else
+            {
+                vector_throttle.at( run ) += vector_addition_throttle.at( run );
+            }  
+        }
         rate.sleep();
+
         
     }
 
 }
 
-void compare_data( const std::vector< int16_t >* vector_throttle,
-        const std::vector< uint32_t >* vector_erpm,
+void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
+        const boost::array< uint32_t , 8 >* vector_erpm,
         const double* positive_table,
         const double* negative_table,
-        std::vector< double >* current_force )
+        boost::array< double , 8 >* current_force )
 {
     for( unsigned int run = 0 ; run < 8 ; run++ )
     {

@@ -23,7 +23,12 @@
 #define _ZEABUS_CONTROL_PID_HPP__
 
 template< typename first , typename second >
-bool equal( first first_value , second second_value );
+bool equal( first first_value , second second_value )
+{
+    bool result = false;
+    if( fabs( first_value - second_value ) <= 1e-3 ) result = true;
+    return result;
+}
 
 class PID
 {

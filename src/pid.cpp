@@ -15,14 +15,6 @@
 
 #include    <pid.hpp>
 
-template< typename first , typename second >
-bool equal( first first_value , second second_value )
-{
-    bool result = false;
-    if( fabs( first_value - second_value ) <= 1e-3 ) result = true;
-    return result;
-}
-
 PID::PID( double kp , double ki , double kd , double ks )
 {   
     this->set_parameter( kp , ki , kd , ks);

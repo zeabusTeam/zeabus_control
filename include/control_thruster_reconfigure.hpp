@@ -27,7 +27,6 @@
 #ifndef _ZEABUS_CONTROL_CONTROL_THRUSTER_RECONFIGURE_HPP__
 #define _ZEABUS_CONTROL_CONTROL_THRUSTER_RECONFIGURE_HPP__
 
-
 void dynamic_reconfigure_callback( zeabus_control::PIDThrusterConfig &config , uint32_t level );
 
 void dynamic_reconfigure_set_parameter( PID* pid );

@@ -31,15 +31,15 @@ catkin_package(
 )
 
 
-add_executable( control_thruster 
+add_executable( control_force 
     src/pid.cpp
     src/control_thruster_reconfigure.cpp
     src/control_thruster.cpp
 )
-add_dependencies( control_thruster 
+add_dependencies( control_force 
     ${PROJECT_NAME}_gencfg
 )
-target_link_libraries(  control_thruster
+target_link_libraries( control_force
     ${zeabus_library_LIBRARIES}
     ${catkin_LIBRARIES}
 )

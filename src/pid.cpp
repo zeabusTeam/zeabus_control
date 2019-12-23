@@ -40,7 +40,7 @@ void PID::set_parameter( double kp , double ki, double kd , double ks )
     this->kp = kp;
     this->ki = ki;
     this->kd = kd;
-    this->reset();
+    if( have_reset ) this->reset();
 
 } // PID::set_parameter
 

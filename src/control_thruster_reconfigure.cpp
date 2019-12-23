@@ -36,10 +36,8 @@ void dynamic_reconfigure_callback( zeabus_control::PIDThrusterConfig &config , u
 
 void dynamic_reconfigure_set_parameter( PID* pid )
 {
-    lock_dynamic_reconfigure.lock();
     for( unsigned int run  = 0 ; run < 8 ; run++ )
     {
         pid[ run ].set_parameter( parameter[0] , parameter[1] , parameter[2] , parameter[3] );
     }
-    lock_dynamic_reconfigure.unlock();
 }

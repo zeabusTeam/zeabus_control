@@ -15,6 +15,8 @@
 
 #include    <mutex>
 
+#include    <vector>
+
 #include    <iostream>
 
 #include    <ros/ros.h>
@@ -22,6 +24,8 @@
 #include    <zeabus/escape_code.hpp>
 
 #include    <zeabus_utility/Float64Array8.h>
+
+#include    <zeabus_utility/Int16Array8.h>
 
 #include    <zeabus_elec_ros/MessageTelemetryValue.h>
 
@@ -34,6 +38,8 @@
 #include    <zeabus/ros/subscriber/base_class.hpp>
 
 #include    <zeabus/ros/node.hpp>
+
+#include    <zeabus_utility/SendThrottle.h>
 
 extern double parameter[4];
 extern bool avaliable_new_parameter;

@@ -22,10 +22,24 @@ include_directories(
 generate_dynamic_reconfigure_options(
     cfg/PIDandSaturation.cfg
     cfg/PIDnonDiscrete.cfg
+    cfg/PIDThruster.cfg
 )
 
 catkin_package(
-    CATKIN_DEPENDS roscpp
-    DEPENDS Boost ${PROJECT_NAME}_gencfg
+    CATKIN_DEPENDS roscpp dynamic_reconfigure
+    DEPENDS Boost ${PROJECT_NAME}_gencfg zeabus_library
 )
 
+
+add_executable( control_thruster 
+    src/pid.cpp
+    src/control_thruster_reconfigure.cpp
+    src/control_thruster.cpp
+)
+add_dependencies( control_thruster 
+    ${PROJECT_NAME}_gencfg
+)
+target_link_libraries(  control_thruster
+    ${zeabus_library_LIBRARIES}
+    ${catkin_LIBRARIES}
+)

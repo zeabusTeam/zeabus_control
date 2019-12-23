@@ -56,3 +56,10 @@ void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
         const double* positive_table,
         const double* negative_table,
         boost::array< double , 8 >* current_force );
+
+void print_reported(
+    const boost::array< double , 8 >* target_force,
+    const boost::array< double , 8 >* current_force,
+    const boost::array< double , 8 >* addition_throttle,
+    const boost::array< int16_t , 8 >* throttle,
+    const boost::array< uint32_t , 8 >* erpm );

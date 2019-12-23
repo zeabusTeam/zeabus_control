@@ -100,7 +100,7 @@ int main( int argv , char** argc )
     // Part set client for send dshot or throttle
     ros::ServiceClient client_throttle = nh.serviceClient< zeabus_utility::SendThrottle >(
             topic_send_throttle );
-    zeabus_utility::SendThrottle throttle_handle;
+    zeabus_utility::SendThrottle srv_throttle;
     zeabus_utility::Int16Array8 message_throttle;
     ros::Publisher publish_throttle = nh.advertise< zeabus_utility::Int16Array8 >(
             topic_send_throttle , 1 );
@@ -176,7 +176,7 @@ compute_throttle_force:
             if( fabs( vector_addition_throttle.at( run ) ) > 250 )
             {
                 vector_addition_throttle.at( run ) = 
-                        copysign( vector_addition_throttle.at( run ) , 250 );
+                        copysign( 250 , vector_addition_throttle.at( run ) );
             }
             if( equal( vector_target_force.at( run ) , 0 ) )
             {
@@ -185,7 +185,27 @@ compute_throttle_force:
             else
             {
                 vector_throttle.at( run ) += vector_addition_throttle.at( run );
-            }  
+            } 
+            if( fabs( vector_throttle.at( run ) ) > 999 )
+            {
+                vector_throttle.at( run ) = copysign( 1000 , vector_throttle.at( run ) );
+            }
+        }
+        message_throttle.header.stamp = time_stamp;
+        message_throttle.data = vector_throttle;
+        publish_throttle.publish( message_throttle );
+send_throttle:
+        srv_throttle.request.header = message_throttle.header;
+        srv_throttle.request.data = message_throttle.data;
+        if( client_throttle.call( srv_throttle ) )
+        {
+            print_reported( &vector_target_force , &vector_current_force,
+                    &vector_addition_throttle , &vector_throttle , 
+                    &vector_erpm );
+        }
+        else
+        {
+            ROS_ERROR( "Falied to call send throttle");
         }
         rate.sleep();
 
@@ -218,5 +238,22 @@ void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
         {
             current_force->at( run ) = negative_table[ position ];
         } // condition negative force of thruster
+    }
+}
+
+void print_reported(
+        const boost::array< double , 8 >* target_force,
+        const boost::array< double , 8 >* current_force,
+        const boost::array< double , 8 >* addition_throttle,
+        const boost::array< int16_t , 8 >* throttle,
+        const boost::array< uint32_t , 8 >* erpm )
+{
+    printf( "================== CONTROL REPORTED ===============");
+    printf( "No.|   target|  current| addition|   output|     erpm\n");
+    for( unsigned int run = 0 ; run <  8 ; run++ )
+    {
+        printf( "%3d|%9.3f|%9.3f|%9.3f|%9d,%9d\n" , run , target_force->at( run ), 
+                current_force->at( run ) , addition_throttle->at( run ) ,
+                throttle->at( run ) , erpm->at( run ) );
     }
 }

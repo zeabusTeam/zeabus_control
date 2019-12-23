@@ -47,8 +47,8 @@ int main( int argv , char** argc )
             topic_send_throttle, 
             "hardware/thruster_throttle" );
 
-    std::string topic_force_command;
-    ph.param< std::string >( "topic_output_command" , topic_force_command , "control/command_force");
+    std::string topic_telemetry_input;
+    ph.param< std::string >( "topic_telemetry" , topic_telemetry_input , "elec/telemetry_value");
 
 // =========================== PART parameter =================================
 
@@ -91,12 +91,14 @@ int main( int argv , char** argc )
     zeabus_ros::subscriber::BaseClass< zeabus_utility::Float64Array8 > listener_target_force( &nh,
             &message_target_force );
     listener_target_force.setup_mutex_data( &lock_target_force );
+    listener_target_force.setup_subscriber( topic_force_target , 1 );
     // Part receive current telemetry
     std::mutex lock_current_telemetry;
     zeabus_elec_ros::MessageTelemetryValue message_current_telemetry;
     zeabus_ros::subscriber::BaseClass< zeabus_elec_ros::MessageTelemetryValue > 
             listener_current_telemetry( &nh , &message_current_telemetry );
-    listener_target_force.setup_mutex_data( &lock_current_telemetry );
+    listener_current_telemetry.setup_mutex_data( &lock_current_telemetry );
+    listener_current_telemetry.setup_subscriber( topic_telemetry_input , 1 );
     // Part set client for send dshot or throttle
     ros::ServiceClient client_throttle = nh.serviceClient< zeabus_utility::SendThrottle >(
             topic_send_throttle );
@@ -209,7 +211,6 @@ send_throttle:
         }
         rate.sleep();
 
-        
     }
 
 }

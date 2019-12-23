@@ -25,6 +25,9 @@
     <build_depend>zeabus_utility</build_depend>
     <exec_depend>zeabus_utility</exec_depend>
 
+    <build_depend>zeabus_elec_ros</build_depend>
+    <exec_depend>zeabus_elec_ros</exec_depend>
+
     <build_depend>dynamic_reconfigure</build_depend>
     <exec_depend>dynamic_reconfigure</exec_depend>
 

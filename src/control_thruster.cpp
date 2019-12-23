@@ -95,7 +95,7 @@ int main( int argv , char** argc )
     vector_current_force.assign( 8  , 0 );
     std::vector< int16_t > vector_throttle;
     vector_throttle.assign( 8 , 0 );
-    std::vector< unsigned int32_t > vector_erpm;
+    std::vector< uint32_t > vector_erpm;
     vector_erpm.assign( 8 , 0 );
 
     ros::Rate rate( frequency );
@@ -140,4 +140,31 @@ check_current_force:
         
     }
 
+}
+
+void compare_data( const std::vector< int16_t >* vector_throttle,
+        const std::vector< uint32_t >* vector_erpm,
+        const double* positive_table,
+        const double* negative_table,
+        std::vector< double >* current_force )
+{
+    for( unsigned int run = 0 ; run < 8 ; run++ )
+    {
+        int position = vector_erpm->at( run ) / 7;
+        if( position > 4000 )
+        {
+            std::cout   << zeabus::escape_code::bold_yellow << "Warning! erpm are over by pos is "
+                        << position << zeabus::escape_code::normal_white
+                        << " for thruster number " << run << "\n";
+            ros::shutdown();
+        } // condition ohmy god
+        else if( vector_throttle->at( run ) > 0 )
+        {
+            current_force->at( run ) = positive_table[ position ];
+        } // condition positive force of thruster
+        else 
+        {
+            current_force->at( run ) = negative_table[ position ];
+        } // condition negative force of thruster
+    }
 }

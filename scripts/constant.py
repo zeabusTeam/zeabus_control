@@ -29,3 +29,4 @@ class System( object ):
     _TOPIC_INPUT_ERROR = Interface._TOPIC_OUTPUT_ERROR
     _TOPIC_INPUT_STATE = Interface._TOPIC_INPUT_STATE
     _TOPIC_OUTPUT_COMMAND_THROTTLE = "/control/throttle"
+    _TOPIC_OUTPUT_TARGET_FORCE = "/control/target_force"

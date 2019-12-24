@@ -31,7 +31,7 @@ from tune_parameter import TuneParameter
 from constant import System as pm # parameter
 from constant import _PARING_ORDER 
 
-from zeabus_utility.msg import Int16Array8, ControlCommand
+from zeabus_utility.msg import Int16Array8, ControlCommand, Float64Array8
 from nav_msgs.msg import Odometry
 
 class ControlSystem :
@@ -49,8 +49,14 @@ class ControlSystem :
         self.lock_odom_error = allocate_lock()
         self.message_odom_error = nm.control_command()
         self.odom_error = nm.control_command()
+        # Use save current force 
+        self.lock_current_force = allocate_lock()
+        self.message_current_force = nm.float64_array8()
+        self.current_force = nm.float64_array8()
         # use Publish data to control_thruster node
-        self.message_command = Int16Array8()
+#        self.message_command = Int16Array8()
+#        self.message_command.header.frame_id = "base_link"
+        self.message_command = Float64Array8()
         self.message_command.header.frame_id = "base_link"
         # PID varialbe
         self.system = { "x" : PID() , "y" : PID() , "z" : PID() , 
@@ -77,10 +83,21 @@ class ControlSystem :
             Odometry,
             self.callback_state )
 
-        self.publish_command_thruster = rospy.Publisher( 
-            pm._TOPIC_OUTPUT_COMMAND_THROTTLE,
-            Int16Array8,
+        self.subscribe_current_force = rospy.Subscriber(
+            pm._TOPIC_INPUT_CURRENT_FORCE,
+            Float64Array8,
+            self.callback_current_force )
+
+#        self.publish_command_thruster = rospy.Publisher( 
+#            pm._TOPIC_OUTPUT_COMMAND_THROTTLE,
+#            Int16Array8,
+#            queue_size = 1 )
+
+        self.publish_target_force = rospy.Publisher(
+            pm._TOPIC_OUTPUT_TARGET_FORCE,
+            Float64Array8,
             queue_size = 1 )
+
 #   Finish function constuctor and start function activate
 
     def activate( self ):
@@ -104,7 +121,8 @@ class ControlSystem :
 
             self.calculate_force_thruster()
 
-            self.publish_command_thruster.publish( self.message_command )
+#            self.publish_command_thruster.publish( self.message_command )
+            self.publish_target_force.publish( self.message_command )
 
             if __PRINT_REPORTER__ :
                 self.__report()
@@ -138,24 +156,40 @@ class ControlSystem :
         sum_force = np.array( self.target_force_robot_frame )
 
         thruster_force = np.matmul( robot.direction_inverse.T , sum_force.T )
-        # Now we get about force of ndividual thruster
+        # Now we get about force of individual thruster
 
-        command_throttle = []
-        for run in range( 0 , 8 ):
-            temp = int( self.lookup.find_pwm( thruster_force[ run ] ) )
-            command_throttle.append( temp ) 
+        self.message_command.header.stamp = self.time_stamp
+        self.message_command.data = tuple( thruster_force )
+        if self.load_current_force() :
+            real_force = np.zeros( 8 )
+            for run in range( 0 , 8 ):
+                real_force[ run ] = self.current_force.data[ run ]
+            
+            real_force = np.matmul( real_force , robot.direction )
+            for run in range( 0 , 6 ):
+                self.saturation[ run ] = -real_force[ run ] = sum_force[ run ]
+        else:
+            for run in range( 0 . 6 ):
+                self.saturation[ run ] = 0 
+                
+
+#       Part don't have control thruster
+#        command_throttle = []
+#        for run in range( 0 , 8 ):
+#            temp = int( self.lookup.find_pwm( thruster_force[ run ] ) )
+#            command_throttle.append( temp ) 
 
         # preapare message for publish to buffer control
-        self.message_command.header.stamp = self.time_stamp
-        self.message_command.data = tuple( command_throttle )
+#        self.message_command.header.stamp = self.time_stamp
+#        self.message_command.data = tuple( command_throttle )
 
-        real_force = np.zeros( 8 )
-        for run in range( 0 , 8 ):
-            real_force[ run ] = self.lookup.force_table[ command_throttle[ run ] + 1000 ]
+#        real_force = np.zeros( 8 )
+#        for run in range( 0 , 8 ):
+#            real_force[ run ] = self.lookup.force_table[ command_throttle[ run ] + 1000 ]
         
-        real_force = np.matmul( real_force , robot.direction )
-        for run in range( 0 , 6 ):
-            self.saturation[ run ] =  -real_force[ run ] + sum_force[ run ]
+#        real_force = np.matmul( real_force , robot.direction )
+#        for run in range( 0 , 6 ):
+#            self.saturation[ run ] =  -real_force[ run ] + sum_force[ run ]
 
     def __report( self ):
         print( "=============== REPORTED ===============" )
@@ -178,9 +212,26 @@ class ControlSystem :
         print( "saturation  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
                 self.saturation[0] , self.saturation[1] , self.saturation[2] , 
                 self.saturation[3] , self.saturation[4] , self.saturation[5] ) )
-        print( "Throttle command : " + repr( self.message_command.data ) + "\n" )
+        print( "force command : " + repr( self.message_command.data ) + "\n" )
+        print( "current force : " + repr( self.current_force.data ) + "\n" ) 
 
 #   End part function for activate and start part callback
+    def callback_current_force( self , message ):
+        with self.lock_current_force:
+            self.message_current_force = message
+
+    def load_current_force( self ):
+        with self.lock_current_force:
+            if self.current_force.header.stamp != self.message_current_force.header.stamp:
+                self.current_force = self.message_current_force
+
+        if( self.time_stamp - self.current_force.header.stamp ).to_sec() < pm._TIMEOUT:
+            activate = True
+        else:
+            activate = False
+
+        return activate
+
     def callback_odom_error( self , message ):
         with self.lock_odom_error:
             self.message_odom_error = message

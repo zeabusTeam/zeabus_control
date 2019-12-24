@@ -167,9 +167,9 @@ class ControlSystem :
             
             real_force = np.matmul( real_force , robot.direction )
             for run in range( 0 , 6 ):
-                self.saturation[ run ] = -real_force[ run ] = sum_force[ run ]
+                self.saturation[ run ] = -real_force[ run ] + sum_force[ run ]
         else:
-            for run in range( 0 . 6 ):
+            for run in range( 0 , 6 ):
                 self.saturation[ run ] = 0 
                 
 

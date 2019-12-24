@@ -208,6 +208,7 @@ send_throttle:
         else
         {
             ROS_ERROR( "Falied to call send throttle");
+            ros::Duration( 1 ).sleep();
         }
         rate.sleep();
 

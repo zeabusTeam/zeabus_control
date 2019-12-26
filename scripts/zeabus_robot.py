@@ -17,7 +17,7 @@ sin_45 = math.sin( math.radians( 45 ) )
 # set direction of thuster
 direction_linear = numpy.array([
     [0 , 0 , 1],
-    [0 , 0 , 1],
+    [0 , 0 , 0],
     [0 , 0 , 1],
     [0 , 0 , 1],
     [cos_45, -sin_45 , 0 ],

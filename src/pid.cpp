@@ -18,6 +18,7 @@
 PID::PID( double kp , double ki , double kd , double ks )
 {   
     this->set_parameter( kp , ki , kd , ks);
+    this->reset();
 } // PID::PID constructor
 
 void PID::set_parameter( double kp , double ki, double kd , double ks )

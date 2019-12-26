@@ -11,6 +11,8 @@
 
 // MACRO SET
 #define _DYNAMIC_RECONFIGURE_
+#define _PUBLISH_ERROR_
+#define _PRINT_REPORTES_
 
 // MACRO CONDITION
 
@@ -42,6 +44,11 @@ int main( int argv , char** argc )
     std::string topic_force_output;
     ph.param< std::string >( "topic_output_force" , topic_force_output , "control/current_force" ); 
 
+#ifdef _PUBLISH_ERROR_
+    std::string topic_force_error;
+    ph.param< std::string >( "topic_output_error" , topic_force_error , "control/error_force" );
+    boost::array< double , 8 > vector_error_force; 
+#endif
     std::string topic_send_throttle;
     ph.param< std::string >( "topic_output_dshot", 
             topic_send_throttle, 
@@ -91,7 +98,7 @@ int main( int argv , char** argc )
     zeabus_ros::subscriber::BaseClass< zeabus_utility::Float64Array8 > listener_target_force( &nh,
             &message_target_force );
     listener_target_force.setup_mutex_data( &lock_target_force );
-    listener_target_force.setup_subscriber( topic_force_target , 1 );
+    listener_target_force.setup_subscriber_timestamp( topic_force_target , 1 );
     // Part receive current telemetry
     std::mutex lock_current_telemetry;
     zeabus_elec_ros::MessageTelemetryValue message_current_telemetry;
@@ -110,6 +117,12 @@ int main( int argv , char** argc )
     zeabus_utility::Float64Array8 message_current_force;
     ros::Publisher publish_current_force = nh.advertise< zeabus_utility::Float64Array8 >(
             topic_force_output , 1 ); 
+
+#ifdef _PUBLISH_ERROR_
+    zeabus_utility::Float64Array8 message_error_force;
+    ros::Publisher publish_error_force = nh.advertise< zeabus_utility::Float64Array8 >(
+            topic_force_error , 1 ); 
+#endif // _PUBLISH_ERROR_
 
 // =========================== PART VARIABLE FOR ACTIVATE =======================
     boost::array< double , 8 > vector_addition_throttle;
@@ -174,7 +187,11 @@ compute_throttle_force:
             vector_addition_throttle.at( run ) = pid[ run ].calculate(
                     vector_target_force.at( run ) - vector_current_force.at( run ),
                     message_current_force.header.stamp,
-                    0 ); // saturation = 0 
+                    0 ); // saturation = 0
+#ifdef _PUBLISH_ERROR_
+            vector_error_force.at( run ) = 
+                    vector_target_force.at( run ) - vector_current_force.at( run ); 
+#endif // _PUBLISH_ERROR_
             if( fabs( vector_addition_throttle.at( run ) ) > 250 )
             {
                 vector_addition_throttle.at( run ) = 
@@ -193,6 +210,11 @@ compute_throttle_force:
                 vector_throttle.at( run ) = copysign( 1000 , vector_throttle.at( run ) );
             }
         }
+#ifdef _PUBLISH_ERROR_
+        message_error_force.header.stamp = time_stamp;
+        message_error_force.data = vector_error_force;
+        publish_error_force.publish( message_error_force );
+#endif // _PUBLISH_ERROR_
         message_throttle.header.stamp = time_stamp;
         message_throttle.data = vector_throttle;
         publish_throttle.publish( message_throttle );
@@ -201,9 +223,11 @@ send_throttle:
         srv_throttle.request.data = message_throttle.data;
         if( client_throttle.call( srv_throttle ) )
         {
+#ifdef _PRINT_REPORTES_
             print_reported( &vector_target_force , &vector_current_force,
                     &vector_addition_throttle , &vector_throttle , 
                     &vector_erpm );
+#endif 
         }
         else
         {
@@ -224,14 +248,19 @@ void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
 {
     for( unsigned int run = 0 ; run < 8 ; run++ )
     {
-        int position = vector_erpm->at( run ) / 7;
+        unsigned int position = vector_erpm->at( run ) / 7;
         if( position > 4000 )
         {
             std::cout   << zeabus::escape_code::bold_yellow << "Warning! erpm are over by pos is "
                         << position << zeabus::escape_code::normal_white
-                        << " for thruster number " << run << "\n";
+                        << " for thruster number " << run << " erpm is " << vector_erpm->at( run ) 
+                        << "\n" ;
             ros::shutdown();
         } // condition ohmy god
+        else if( fabs( vector_throttle->at( run ) ) < 50 )
+        {
+            current_force->at( run ) = 0;
+        }
         else if( vector_throttle->at( run ) > 0 )
         {
             current_force->at( run ) = positive_table[ position ];
@@ -251,7 +280,7 @@ void print_reported(
         const boost::array< uint32_t , 8 >* erpm )
 {
     printf( "================== CONTROL REPORTED ===============");
-    printf( "No.|   target|  current| addition|   output|     erpm\n");
+    printf( "\nNo.|   target|  current| addition|   output|     erpm\n");
     for( unsigned int run = 0 ; run <  8 ; run++ )
     {
         printf( "%3d|%9.3f|%9.3f|%9.3f|%9d,%9d\n" , run , target_force->at( run ), 

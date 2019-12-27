@@ -15,13 +15,14 @@ import numpy as np
 from geometry_msgs.msg import TwistStamped
 
 from zeabus_utility.srv import SendThrottle
-from zeabus_utility.msg import Int16Array8
+from zeabus_utility.msg import Int16Array8, Float64Array8
 
 from thread import allocate_lock
 from zeabus.control.lookup_pwm_force import  LookupPwmForce
-from parameter import ControlParameter
 import zeabus_robot as robot
 from zeabus.ros import message as new_message
+
+_DIRECT_THROTTLE_ = False
 
 class BufferControl:
 
@@ -42,13 +43,13 @@ class BufferControl:
         self.lock_throttle_message = allocate_lock()
 
         self.subscribe_throttle_message = rospy.Subscriber(
-                "/control/throttle",
+                "/control/thruster/throttle",
                 Int16Array8 , 
                 self.listen_throttle_message
         )
 
         self.subscribe_twist_message = rospy.Subscriber(
-                "/control/twist" ,
+                "/control/thruster/twist" ,
                 TwistStamped ,
                 self.listen_twist_message
         )
@@ -57,11 +58,11 @@ class BufferControl:
                 Int16Array8 ,
                 queue_size = 1 )
 
-        self.system_param = ControlParameter()
+        self.publish_force = rospy.Publisher( "/control/force/absolute" ,
+                Float64Array8 ,
+                queue_size = 1 )
         # look compare find thruster can look on zeabus_library/python_src/zeabus/control
-        self.lookup = LookupPwmForce( self.system_param.table_file['package'] , 
-                self.system_param.table_file['directory'] , 
-                self.system_param.table_file['file'] )
+        self.lookup = LookupPwmForce( "zeabus_control" , "parameter" , "throttle_force_table.txt" )
 
         self.client_throttle = rospy.ServiceProxy(
                 '/hardware/thruster_throttle' , SendThrottle )
@@ -73,6 +74,7 @@ class BufferControl:
         print( "Output Data : " + repr( buffer_throttle_data) )
         header = new_message.header( "base_link")
         message = new_message.int16_array8( buffer_throttle_data )
+        force_message = Float64Array8()
         while not rospy.is_shutdown():
 
             if self.load_twist_message():
@@ -84,33 +86,39 @@ class BufferControl:
                         self.twist_load.twist.angular.z
                 ] )
                 thruster_force = np.matmul( robot.direction_inverse.T , temp_array.T )
-                throttle = []
-                for run in range( 0 , 8 ):
-                    temp = int( self.lookup.find_pwm( thruster_force[ run ] ) )
-                    throttle.append( temp )
-                active_throttle_data = tuple( throttle ) 
+                if not _DIRECT_THROTTLE_ :
+                    force_message.header.stamp = rospy.get_rostime()
+                    force_message.data = tuple( thruster_force )
+                    self.publish_force.publish( force_message )
+                else:                    
+                    throttle = []
+                    for run in range( 0 , 8 ):
+                        temp = int( self.lookup.find_pwm( thruster_force[ run ] ) )
+                        throttle.append( temp )
+                    active_throttle_data = tuple( throttle ) 
+                    header.stamp = rospy.get_rostime()
+                    self.send_throttle( header , active_throttle_data )
             elif self.load_throttle_message():
                 active_throttle_data = self.throttle_load.data
+                header.stamp = rospy.get_rostime()
+                self.send_throttle( header , active_throttle_data )
             else:
                 active_throttle_data = ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 )
+                header.stamp = rospy.get_rostime()
+                self.send_throttle( header , active_throttle_data )
 
-            if active_throttle_data != buffer_throttle_data :
-                print( "Output Data : " + repr( active_throttle_data ) )
-                buffer_throttle_data = active_throttle_data
-            else:
-                None
-            header.stamp = rospy.get_rostime()
-
-            try:
-                self.client_throttle( header , buffer_throttle_data )
-                message.header = header
-                message.data = buffer_throttle_data 
-                self.publish_throttle.publish( message )
-            except rospy.ServiceException , e : 
-                rospy.logfatal( "Failure to write pwm response from haredware")
 
             rate.sleep()
-                
+        
+    def send_throttle( self , header , buffer_throttle_data ):
+        try:
+            self.client_throttle( header , buffer_throttle_data )
+            message.header = header
+            message.data = buffer_throttle_data 
+            self.publish_throttle.publish( message )
+        except rospy.ServiceException , e : 
+            rospy.logfatal( "Failure to write pwm response from haredware")
+
     def load_twist_message( self ):
         with self.lock_twist_message :
             self.twist_load = self.twist_message

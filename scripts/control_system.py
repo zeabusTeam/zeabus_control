@@ -71,6 +71,8 @@ class ControlSystem :
         self.target_force_robot_frame = [ 0 , 0 , 0 , 0 , 0 , 0 ]
 
         self.saturation = [0 , 0 , 0 , 0 , 0 , 0 ]
+        
+        self.sum_force = np.zeros( 6 )
 
 #   part manage variable in ros system
         self.subscribe_odom_error = rospy.Subscriber( 
@@ -111,6 +113,19 @@ class ControlSystem :
             self.load_odom_error()
             self.load_state()
 
+#   Part find saturation of robot 
+            if self.load_current_force() :
+                real_force = np.zeros( 8 )
+                for run in range( 0 , 8 ):
+                    real_force[ run ] = self.current_force.data[ run ]
+                
+                real_force = np.matmul( real_force , robot.direction )
+                for run in range( 0 , 6 ):
+                    self.saturation[ run ] = -real_force[ run ] + self.sum_force[ run ]
+            else:
+                for run in range( 0 , 6 ):
+                    self.saturation[ run ] = 0 
+#   Put data to PID system
             for key , run in _PARING_ORDER :
                 if self.odom_error.mask[run ] :
                     self.target_force_odom_frame[ run ] =  self.system[ key ].calculate( 
@@ -153,27 +168,15 @@ class ControlSystem :
         self.target_force_robot_frame[ 4 ] = self.target_force_odom_frame[ 4 ]
         self.target_force_robot_frame[ 5 ] = self.target_force_odom_frame[ 5 ]
 
-        sum_force = np.array( self.target_force_robot_frame )
+        self.sum_force = np.array( self.target_force_robot_frame )
 
-        thruster_force = np.matmul( robot.direction_inverse.T , sum_force.T )
+        thruster_force = np.matmul( robot.direction_inverse.T , self.sum_force.T )
         # Now we get about force of individual thruster
 
         self.message_command.header.stamp = self.time_stamp
         self.message_command.data = tuple( thruster_force )
-        if self.load_current_force() :
-            real_force = np.zeros( 8 )
-            for run in range( 0 , 8 ):
-                real_force[ run ] = self.current_force.data[ run ]
-            
-            real_force = np.matmul( real_force , robot.direction )
-            for run in range( 0 , 6 ):
-                self.saturation[ run ] = -real_force[ run ] + sum_force[ run ]
-        else:
-            for run in range( 0 , 6 ):
-                self.saturation[ run ] = 0 
                 
-
-#       Part don't have control thruster
+#       Part don't have control_force
 #        command_throttle = []
 #        for run in range( 0 , 8 ):
 #            temp = int( self.lookup.find_pwm( thruster_force[ run ] ) )
@@ -189,7 +192,7 @@ class ControlSystem :
         
 #        real_force = np.matmul( real_force , robot.direction )
 #        for run in range( 0 , 6 ):
-#            self.saturation[ run ] =  -real_force[ run ] + sum_force[ run ]
+#            self.saturation[ run ] =  -real_force[ run ] + self.sum_force[ run ]
 
     def __report( self ):
         print( "=============== REPORTED ===============" )

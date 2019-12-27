@@ -23,6 +23,8 @@
 
 #include    <ros/ros.h>
 
+#include    <ros/console.h>
+
 #include    <zeabus/escape_code.hpp>
 
 #include    <zeabus_utility/Float64Array8.h>

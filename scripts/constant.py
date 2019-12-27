@@ -14,7 +14,7 @@ class Interface( object ):
     _TIMEOUT = 1.0
     _TOPIC_OUTPUT_ERROR = "control/system/error"
     _TOPIC_INPUT_STATE = "localize/zeabus"
-    _TOPIC_INPUT_TARGET_VELOCITY = "control/velocity"
+    _TOPIC_INPUT_TARGET_VELOCITY = "control/interface/velocity"
     _RATE = 30
     _FRAME_ERROR_PARENT = "base_link"
     _FRAME_ERROR_CHILD = "base_link_target"
@@ -28,6 +28,6 @@ class System( object ):
     _RATE = 15
     _TOPIC_INPUT_ERROR = Interface._TOPIC_OUTPUT_ERROR
     _TOPIC_INPUT_STATE = Interface._TOPIC_INPUT_STATE
-    _TOPIC_INPUT_CURRENT_FORCE = "/control/current_force"
-    _TOPIC_OUTPUT_COMMAND_THROTTLE = "/control/throttle"
-    _TOPIC_OUTPUT_TARGET_FORCE = "/control/target_force"
+    _TOPIC_INPUT_CURRENT_FORCE = "/control/force/current"
+    _TOPIC_OUTPUT_TARGET_FORCE = "/control/force/target"
+    _TOPIC_OUTPUT_COMMAND_THROTTLE = "/control/thruster/throttle"

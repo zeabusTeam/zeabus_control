@@ -29,24 +29,24 @@ int main( int argv , char** argc )
 
     node.spin();
 
-    const static double time_out = 3;
+    const static double time_out = 1.0;
 
 // =========================== PART ROS PARAM =================================
     int frequency = 30;
     ph.param< int >( "frequency" , frequency , 30 );
 
     std::string topic_force_target;
-    ph.param< std::string >( "topic_input_target" , topic_force_target , "control/target_force" );
+    ph.param< std::string >( "topic_input_target" , topic_force_target , "control/force/target" );
 
-    std::string topic_force_input;
-    ph.param< std::string >( "topic_input_force" , topic_force_input , "control/force" );
+    std::string topic_force_absolute;
+    ph.param< std::string >( "topic_input_force" , topic_force_absolute , "control/force/absolute" );
 
-    std::string topic_force_output;
-    ph.param< std::string >( "topic_output_force" , topic_force_output , "control/current_force" ); 
+    std::string topic_force_current;
+    ph.param< std::string >( "topic_output_force" , topic_force_current , "control/force/current" ); 
 
 #ifdef _PUBLISH_ERROR_
-    std::string topic_force_error;
-    ph.param< std::string >( "topic_output_error" , topic_force_error , "control/error_force" );
+    std::string topic_force_error;;
+    ph.param< std::string >( "topic_output_error" , topic_force_error , "control/force/error" );
     boost::array< double , 8 > vector_error_force; 
 #endif
     std::string topic_send_throttle;
@@ -99,6 +99,15 @@ int main( int argv , char** argc )
             &message_target_force );
     listener_target_force.setup_mutex_data( &lock_target_force );
     listener_target_force.setup_subscriber_timestamp( topic_force_target , 1 );
+
+    // Part receive absolute force
+    std::mutex lock_absolute_force;
+    zeabus_utility::Float64Array8 message_absolute_force;
+    zeabus_ros::subscriber::BaseClass< zeabus_utility::Float64Array8 > listener_absolute_force( &nh,
+            &message_absolute_force );
+    listener_absolute_force.setup_mutex_data( &lock_target_force );
+    listener_absolute_force.setup_subscriber_timestamp( topic_force_absolute , 1 );
+
     // Part receive current telemetry
     std::mutex lock_current_telemetry;
     zeabus_elec_ros::MessageTelemetryValue message_current_telemetry;
@@ -106,6 +115,7 @@ int main( int argv , char** argc )
             listener_current_telemetry( &nh , &message_current_telemetry );
     listener_current_telemetry.setup_mutex_data( &lock_current_telemetry );
     listener_current_telemetry.setup_subscriber( topic_telemetry_input , 1 );
+
     // Part set client for send dshot or throttle
     ros::ServiceClient client_throttle = nh.serviceClient< zeabus_utility::SendThrottle >(
             topic_send_throttle );
@@ -113,12 +123,14 @@ int main( int argv , char** argc )
     zeabus_utility::Int16Array8 message_throttle;
     ros::Publisher publish_throttle = nh.advertise< zeabus_utility::Int16Array8 >(
             topic_send_throttle , 1 );
+
     // Part send output current force
     zeabus_utility::Float64Array8 message_current_force;
     ros::Publisher publish_current_force = nh.advertise< zeabus_utility::Float64Array8 >(
-            topic_force_output , 1 ); 
+            topic_force_current , 1 ); 
 
 #ifdef _PUBLISH_ERROR_
+    // Part send output error force
     zeabus_utility::Float64Array8 message_error_force;
     ros::Publisher publish_error_force = nh.advertise< zeabus_utility::Float64Array8 >(
             topic_force_error , 1 ); 
@@ -255,7 +267,9 @@ void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
                         << position << zeabus::escape_code::normal_white
                         << " for thruster number " << run << " erpm is " << vector_erpm->at( run ) 
                         << "\n" ;
-            ros::shutdown();
+            ROS_WARN( "Warning! erpm over num_thruster:original_erpm:value %2d :%7d :%6d",
+                    run , vector_erpm->at( run ) , position );
+            // ros::shutdown();
         } // condition ohmy god
         else if( fabs( vector_throttle->at( run ) ) < 50 )
         {

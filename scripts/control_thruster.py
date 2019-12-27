@@ -103,14 +103,16 @@ class BufferControl:
                 header.stamp = rospy.get_rostime()
                 self.send_throttle( header , active_throttle_data )
             else:
-                active_throttle_data = ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 )
-                header.stamp = rospy.get_rostime()
-                self.send_throttle( header , active_throttle_data )
+                None
+                #active_throttle_data = ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 )
+                #header.stamp = rospy.get_rostime()
+                #self.send_throttle( header , active_throttle_data )
 
 
             rate.sleep()
         
     def send_throttle( self , header , buffer_throttle_data ):
+        message = new_message.int16_array8( buffer_throttle_data )
         try:
             self.client_throttle( header , buffer_throttle_data )
             message.header = header

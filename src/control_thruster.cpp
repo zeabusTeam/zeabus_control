@@ -105,7 +105,7 @@ int main( int argv , char** argc )
     zeabus_utility::Float64Array8 message_absolute_force;
     zeabus_ros::subscriber::BaseClass< zeabus_utility::Float64Array8 > listener_absolute_force( &nh,
             &message_absolute_force );
-    listener_absolute_force.setup_mutex_data( &lock_target_force );
+    listener_absolute_force.setup_mutex_data( &lock_absolute_force );
     listener_absolute_force.setup_subscriber_timestamp( topic_force_absolute , 1 );
 
     // Part receive current telemetry
@@ -152,6 +152,9 @@ int main( int argv , char** argc )
     ros::Time time_stamp = ros::Time::now(); // use to collect now time
     drh.load( "zeabus_control" , "parameter" , "pid_thruster.yaml" , ros::this_node::getName() );
 
+    bool thruster_state = true;
+    unsigned int count_thruster;
+
 active_main:
     while( ros::ok() )
     {
@@ -170,7 +173,12 @@ active_main:
         time_stamp = ros::Time::now();
 check_target_force:
         lock_target_force.lock();
-        if( ( time_stamp - message_target_force.header.stamp ).toSec() < time_out )
+        lock_absolute_force.lock();
+        if( ( time_stamp - message_absolute_force.header.stamp ).toSec() < time_out  )
+        {
+            vector_target_force = message_absolute_force.data;
+        }
+        else if( ( time_stamp - message_target_force.header.stamp ).toSec() < time_out )
         {
             vector_target_force = message_target_force.data;
         } // condition use target from publish
@@ -178,13 +186,24 @@ check_target_force:
         {
             vector_target_force.assign( 0 ); 
         } // condition set zero
+        lock_absolute_force.unlock();
         lock_target_force.unlock();
 check_current_force:
         lock_current_telemetry.lock();
+        count_thruster = 8 ;
+        thruster_state = true;
         for( unsigned int run = 0 ; run < 8 ; run++ )
         {
             vector_erpm[ run ] = message_current_telemetry.ax_telemetry_value[ run ].erpm;
             message_current_force.header.stamp = message_current_telemetry.header.stamp;
+            if( message_current_telemetry.ax_telemetry_value[ run ].temperature == 0 )
+            {
+                count_thruster -= 1;
+            }
+        }
+        if( thruster_state && count_thruster == 0 )
+        {
+            thruster_state = false;
         }
         lock_current_telemetry.unlock();
         compare_data( &vector_throttle , &vector_erpm , //  previous data and new data
@@ -209,6 +228,15 @@ compute_throttle_force:
                 vector_addition_throttle.at( run ) = 
                         copysign( 250 , vector_addition_throttle.at( run ) );
             }
+            else if( fabs( vector_addition_throttle.at( run ) ) < 1  )
+            {
+                vector_addition_throttle.at( run ) = 
+                        copysign( 1 , vector_addition_throttle.at( run ) );
+            }
+            else
+            {
+                ;
+            }
             if( equal( vector_target_force.at( run ) , 0 ) )
             {
                 vector_throttle.at( run ) = 0;
@@ -216,10 +244,19 @@ compute_throttle_force:
             else
             {
                 vector_throttle.at( run ) += vector_addition_throttle.at( run );
-            } 
+            }
+ 
             if( fabs( vector_throttle.at( run ) ) > 999 )
             {
                 vector_throttle.at( run ) = copysign( 1000 , vector_throttle.at( run ) );
+            }
+        }
+        if( ! thruster_state )
+        {
+            for( unsigned int run = 0 ; run < 8 ; run++ )
+            {
+                pid[ run ].reset();
+                vector_throttle.at( run ) = 0;
             }
         }
 #ifdef _PUBLISH_ERROR_
@@ -233,12 +270,12 @@ compute_throttle_force:
 send_throttle:
         srv_throttle.request.header = message_throttle.header;
         srv_throttle.request.data = message_throttle.data;
-        if( client_throttle.call( srv_throttle ) )
+        if( client_throttle.call( srv_throttle ) && thruster_state )
         {
 #ifdef _PRINT_REPORTES_
             print_reported( &vector_target_force , &vector_current_force,
                     &vector_addition_throttle , &vector_throttle , 
-                    &vector_erpm );
+                    &vector_erpm , thruster_state );
 #endif 
         }
         else
@@ -252,6 +289,7 @@ send_throttle:
 
 }
 
+// Return true in case thruster switch is active
 void compare_data( const boost::array< int16_t , 8 >* vector_throttle,
         const boost::array< uint32_t , 8 >* vector_erpm,
         const double* positive_table,
@@ -291,14 +329,22 @@ void print_reported(
         const boost::array< double , 8 >* current_force,
         const boost::array< double , 8 >* addition_throttle,
         const boost::array< int16_t , 8 >* throttle,
-        const boost::array< uint32_t , 8 >* erpm )
+        const boost::array< uint32_t , 8 >* erpm ,
+        const bool state )
 {
     printf( "================== CONTROL REPORTED ===============");
     printf( "\nNo.|   target|  current| addition|   output|     erpm\n");
-    for( unsigned int run = 0 ; run <  8 ; run++ )
+    if( state )
     {
-        printf( "%3d|%9.3f|%9.3f|%9.3f|%9d,%9d\n" , run , target_force->at( run ), 
-                current_force->at( run ) , addition_throttle->at( run ) ,
-                throttle->at( run ) , erpm->at( run ) );
+        for( unsigned int run = 0 ; run <  8 ; run++ )
+        {
+            printf( "%3d|%9.3f|%9.3f|%9.3f|%9d,%9d\n" , run , target_force->at( run ), 
+                    current_force->at( run ) , addition_throttle->at( run ) ,
+                    throttle->at( run ) , erpm->at( run ) );
+        }
+    }
+    else
+    {
+        printf( "=================== STATE FALSE ================= " );
     }
 }

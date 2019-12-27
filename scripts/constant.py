@@ -15,7 +15,7 @@ class Interface( object ):
     _TOPIC_OUTPUT_ERROR = "control/system/error"
     _TOPIC_INPUT_STATE = "localize/zeabus"
     _TOPIC_INPUT_TARGET_VELOCITY = "control/interface/velocity"
-    _RATE = 30
+    _RATE = 15
     _FRAME_ERROR_PARENT = "base_link"
     _FRAME_ERROR_CHILD = "base_link_target"
 

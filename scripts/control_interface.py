@@ -150,7 +150,6 @@ class ControlInterface :
                         self.message_state.twist.twist.linear.y,
                         self.message_state.twist.twist.linear.z,
                         0 ) )
-                print("set quaternion")
                 self.current_velocity[3] = self.message_state.twist.twist.angular.x
                 self.current_velocity[4] = self.message_state.twist.twist.angular.y
                 self.current_velocity[5] = self.message_state.twist.twist.angular.z

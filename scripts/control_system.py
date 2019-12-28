@@ -226,12 +226,12 @@ class ControlSystem :
         print( "saturation  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
                 self.saturation[0] , self.saturation[1] , self.saturation[2] , 
                 self.saturation[3] , self.saturation[4] , self.saturation[5] ) )
-        print( "force command :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
+        print( "command     :{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}".format(
                 self.message_command.data[0] , self.message_command.data[1] ,
                 self.message_command.data[2] , self.message_command.data[3] ,
                 self.message_command.data[4] , self.message_command.data[5] ,
                 self.message_command.data[6] , self.message_command.data[7] ) )
-        print( "current_force :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}\n".format(
+        print( "current     :{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}\n".format(
                 self.current_force.data[0] , self.current_force.data[1] ,
                 self.current_force.data[2] , self.current_force.data[3] ,
                 self.current_force.data[4] , self.current_force.data[5] ,

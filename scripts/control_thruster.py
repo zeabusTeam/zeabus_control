@@ -104,10 +104,6 @@ class BufferControl:
                 self.send_throttle( header , active_throttle_data )
             else:
                 None
-                #active_throttle_data = ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 )
-                #header.stamp = rospy.get_rostime()
-                #self.send_throttle( header , active_throttle_data )
-
 
             rate.sleep()
         

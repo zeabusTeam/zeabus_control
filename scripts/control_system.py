@@ -118,13 +118,22 @@ class ControlSystem :
                 real_force = np.zeros( 8 )
                 for run in range( 0 , 8 ):
                     real_force[ run ] = self.current_force.data[ run ]
-                
+                 
                 real_force = np.matmul( real_force , robot.direction )
+                # Mapped robot frame to odom frame
+                real_force[ 0 ] , real_force[ 1 ] , real_force[ 2 ] = ( 
+                        self.robot_orientation.rotation( ( real_force[0] , 
+                                real_force[1] , 
+                                real_force[2 ] , 
+                                0 ) )[ 0 : 3 ]
+                )
+
                 for run in range( 0 , 6 ):
                     self.saturation[ run ] = -real_force[ run ] + self.sum_force[ run ]
             else:
                 for run in range( 0 , 6 ):
                     self.saturation[ run ] = 0 
+
 #   Put data to PID system
             for key , run in _PARING_ORDER :
                 if self.odom_error.mask[run ] :
@@ -150,12 +159,14 @@ class ControlSystem :
 
     def calculate_force_thruster( self ):
         # set quaternion of robot
-        robot_orientation = Quaternion( ( self.state.pose.pose.orientation.x,
-                self.state.pose.pose.orientation.y,
-                self.state.pose.pose.orientation.z,
-                self.state.pose.pose.orientation.w ) )
+#        robot_orientation = Quaternion( ( self.state.pose.pose.orientation.x,
+#                self.state.pose.pose.orientation.y,
+#                self.state.pose.pose.orientation.z,
+#                self.state.pose.pose.orientation.w ) )
+        # Already set on function load_state
         
-        robot_linear_force = robot_orientation.inverse_rotation( ( 
+#        robot_linear_force = robot_orientation.inverse_rotation( ( 
+        robot_linear_force = self.robot_orientation.inverse_rotation( ( 
                 self.target_force_odom_frame[ 0 ], 
                 self.target_force_odom_frame[ 1 ], 
                 self.target_force_odom_frame[ 2 ], 
@@ -230,6 +241,7 @@ class ControlSystem :
     def callback_current_force( self , message ):
         with self.lock_current_force:
             self.message_current_force = message
+            self.message_current_force.header.stamp = rospy.get_rostime()
 
     def load_current_force( self ):
         with self.lock_current_force:
@@ -246,6 +258,7 @@ class ControlSystem :
     def callback_odom_error( self , message ):
         with self.lock_odom_error:
             self.message_odom_error = message
+            self.message_odom_error.header.stamp = rospy.get_rostime()
 
     def load_odom_error( self ):
         with self.lock_odom_error:
@@ -267,6 +280,11 @@ class ControlSystem :
         with self.lock_state :
             if self.state.header.stamp != self.message_state.header.stamp :
                 self.state = self.message_state
+
+        self.robot_orientation = Quaternion( ( self.state.pose.pose.orientation.x,
+                self.state.pose.pose.orientation.y,
+                self.state.pose.pose.orientation.z,
+                self.state.pose.pose.orientation.w ) )
 
         if( self.time_stamp - self.state.header.stamp ).to_sec() < pm._TIMEOUT :
             activate = True 

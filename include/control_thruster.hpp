@@ -31,6 +31,8 @@
 
 #include    <zeabus_utility/Int16Array8.h>
 
+#include    <zeabus_utility/UInt32Array8.h>
+
 #include    <zeabus_elec_ros/MessageTelemetryValue.h>
 
 #include    <pid.hpp> // include form package zeabus_control
@@ -64,5 +66,6 @@ void print_reported(
     const boost::array< double , 8 >* current_force,
     const boost::array< double , 8 >* addition_throttle,
     const boost::array< int16_t , 8 >* throttle,
-    const boost::array< uint32_t , 8 >* erpm,
-    const bool state );
+    const boost::array< uint32_t , 8 >* erpm );
+
+void thruster_reported( const bool state );

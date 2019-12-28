@@ -13,6 +13,7 @@
 #define _DYNAMIC_RECONFIGURE_
 #define _PUBLISH_ERROR_
 #define _PRINT_REPORTES_
+#define _PUBLISH_ERPM_
 
 // MACRO CONDITION
 
@@ -223,10 +224,11 @@ compute_throttle_force:
             vector_error_force.at( run ) = 
                     vector_target_force.at( run ) - vector_current_force.at( run ); 
 #endif // _PUBLISH_ERROR_
-            if( fabs( vector_addition_throttle.at( run ) ) > 250 )
+// Calculate how to add result
+            if( fabs( vector_addition_throttle.at( run ) ) > 100 )
             {
                 vector_addition_throttle.at( run ) = 
-                        copysign( 250 , vector_addition_throttle.at( run ) );
+                        copysign( 100 , vector_addition_throttle.at( run ) );
             }
             else if( fabs( vector_addition_throttle.at( run ) ) < 1  )
             {
@@ -237,6 +239,7 @@ compute_throttle_force:
             {
                 ;
             }
+// Calcualte result of throttle when be send to hardware
             if( equal( vector_target_force.at( run ) , 0 ) )
             {
                 vector_throttle.at( run ) = 0;
@@ -267,16 +270,25 @@ compute_throttle_force:
         message_throttle.header.stamp = time_stamp;
         message_throttle.data = vector_throttle;
         publish_throttle.publish( message_throttle );
+
 send_throttle:
         srv_throttle.request.header = message_throttle.header;
         srv_throttle.request.data = message_throttle.data;
-        if( client_throttle.call( srv_throttle ) && thruster_state )
+
+        thruster_reported( thruster_state );
+        if( client_throttle.call( srv_throttle ) )
         {
-#ifdef _PRINT_REPORTES_
+#ifdef _PRINT_REPORT_
             print_reported( &vector_target_force , &vector_current_force,
                     &vector_addition_throttle , &vector_throttle , 
-                    &vector_erpm , thruster_state );
+                    &vector_erpm );
+#else
+            ;
 #endif 
+        }
+        else if( ! thruster_state )
+        {
+            ;
         }
         else
         {
@@ -329,22 +341,31 @@ void print_reported(
         const boost::array< double , 8 >* current_force,
         const boost::array< double , 8 >* addition_throttle,
         const boost::array< int16_t , 8 >* throttle,
-        const boost::array< uint32_t , 8 >* erpm ,
-        const bool state )
+        const boost::array< uint32_t , 8 >* erpm )
 {
     printf( "================== CONTROL REPORTED ===============");
     printf( "\nNo.|   target|  current| addition|   output|     erpm\n");
-    if( state )
+    for( unsigned int run = 0 ; run <  8 ; run++ )
     {
-        for( unsigned int run = 0 ; run <  8 ; run++ )
-        {
-            printf( "%3d|%9.3f|%9.3f|%9.3f|%9d,%9d\n" , run , target_force->at( run ), 
-                    current_force->at( run ) , addition_throttle->at( run ) ,
-                    throttle->at( run ) , erpm->at( run ) );
-        }
+        printf( "%3d|%9.3f|%9.3f|%9.3f|%9d,%9d\n" , run , target_force->at( run ), 
+                current_force->at( run ) , addition_throttle->at( run ) ,
+                throttle->at( run ) , erpm->at( run ) );
+    }
+}
+
+void thruster_reported( const bool state )
+{
+    static bool save_state = true;
+    if( state && ( ! save_state ) ) // Thruster can use now and thruster abort
+    {
+        std::cout   << "Now thruster activate!\n";
+    }
+    else if( ( ! state ) && save_state ) // Thrust can't use and previos thruster can use
+    {
+        std::cout   << "Now thruster deactivate\n";
     }
     else
     {
-        printf( "=================== STATE FALSE ================= " );
+        ;
     }
 }

@@ -46,10 +46,16 @@ int main( int argv , char** argc )
     ph.param< std::string >( "topic_output_force" , topic_force_current , "control/force/current" ); 
 
 #ifdef _PUBLISH_ERROR_
-    std::string topic_force_error;;
+    std::string topic_force_error;
     ph.param< std::string >( "topic_output_error" , topic_force_error , "control/force/error" );
     boost::array< double , 8 > vector_error_force; 
 #endif
+
+#ifdef _PUBLISH_ERPM_
+    std::string topic_erpm;
+    ph.param< std::string >( "topic_output_erpm" , topic_erpm , "control/force/erpm" );
+#endif
+
     std::string topic_send_throttle;
     ph.param< std::string >( "topic_output_dshot", 
             topic_send_throttle, 
@@ -137,6 +143,12 @@ int main( int argv , char** argc )
             topic_force_error , 1 ); 
 #endif // _PUBLISH_ERROR_
 
+#ifdef _PUBLISH_ERPM_
+    zeabus_utility::UInt32Array8 message_erpm;
+    ros::Publisher publish_erpm = nh.advertise< zeabus_utility::UInt32Array8 >(
+            topic_erpm , 1 );
+#endif // _PUBLISH_ERPM_
+
 // =========================== PART VARIABLE FOR ACTIVATE =======================
     boost::array< double , 8 > vector_addition_throttle;
     vector_addition_throttle.assign( 0 );
@@ -197,21 +209,32 @@ check_current_force:
         {
             vector_erpm[ run ] = message_current_telemetry.ax_telemetry_value[ run ].erpm;
             message_current_force.header.stamp = message_current_telemetry.header.stamp;
+
             if( message_current_telemetry.ax_telemetry_value[ run ].temperature == 0 )
             {
                 count_thruster -= 1;
             }
+
         }
         if( thruster_state && count_thruster == 0 )
         {
             thruster_state = false;
         }
-        lock_current_telemetry.unlock();
+#ifdef _PUBLISH_ERPM_
+        message_erpm.header = message_current_telemetry.header;
+#endif // _PUBLISH_ERPM_
+        lock_current_telemetry.unlock(); // release lock of message_current_telemetry
+
         compare_data( &vector_throttle , &vector_erpm , //  previous data and new data
                 positive_table , negative_table , // table for find force
                 &vector_current_force ); // result
         message_current_force.data = vector_current_force;
         publish_current_force.publish( message_current_force ); // publish current force
+#ifdef _PUBLISH_ERPM_
+        message_erpm.data = vector_erpm;
+        publish_erpm.publish( message_erpm );
+#endif // _PUBLISH_ERPM_
+
 compute_throttle_force:
         // Will run loop for compute control get throttle
         for( unsigned int run = 0 ; run < 8 ; run++ )

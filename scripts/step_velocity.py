@@ -31,7 +31,7 @@ class TABLEPITCH( object ):
     TABLE_TARGET_VELOCITY = ( -0.6 , -0.3 , -0.1 , 0 , 0.1 , 0.3 , 0.6 )
 
 class TABLEYAW( object ):
-    TABLE_ERROR = ( -0.5 , -0.1 , -0.05 , 0.05 , 0.1 , 0.5 )
+    TABLE_ERROR = ( -0.5 , -0.1 , -0.02 , 0.02 , 0.1 , 0.5 )
     TABLE_TARGET_VELOCITY = ( -0.6 , -0.3 , -0.1 , 0 , 0.1 , 0.3 , 0.6 )
 
 class StepVelocity:
@@ -51,12 +51,13 @@ class StepVelocity:
             if run == 0:
                 if error < self.table_error[ run ]:
                     answer = self.table_velocity[ run ]
-            elif run == limit_order - 1 :
-                if error > self.table_error[ run ]:
-                    answer = self.table_velocity[ run + 1 ]
             else:
                 if error >= self.table_error[ run - 1 ] and error < self.table_error[ run ]:
                     answer = self.table_velocity[ run ]
+                elif error > self.table_error[ run ]:
+                    answer = self.table_velocity[ run + 1 ]
+                else:
+                    None
         return answer
 
     def set_table_error( self , table ):

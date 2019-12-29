@@ -12,8 +12,8 @@
 // MACRO SET
 #define _DYNAMIC_RECONFIGURE_
 #define _PUBLISH_ERROR_
-#define _PRINT_REPORTES_
 #define _PUBLISH_ERPM_
+#define _PRINT_REPORT_
 
 // MACRO CONDITION
 
@@ -184,6 +184,7 @@ active_main:
         lock_dynamic_reconfigure.unlock(); // release lock part dynamic reconfigure
         // Because I have run 2 thread : callback thread and activate
         time_stamp = ros::Time::now();
+
 check_target_force:
         lock_target_force.lock();
         lock_absolute_force.lock();
@@ -201,6 +202,7 @@ check_target_force:
         } // condition set zero
         lock_absolute_force.unlock();
         lock_target_force.unlock();
+
 check_current_force:
         lock_current_telemetry.lock();
         count_thruster = 8 ;
@@ -220,9 +222,11 @@ check_current_force:
         {
             thruster_state = false;
         }
+
 #ifdef _PUBLISH_ERPM_
         message_erpm.header = message_current_telemetry.header;
 #endif // _PUBLISH_ERPM_
+
         lock_current_telemetry.unlock(); // release lock of message_current_telemetry
 
         compare_data( &vector_throttle , &vector_erpm , //  previous data and new data
@@ -252,6 +256,10 @@ compute_throttle_force:
             {
                 vector_addition_throttle.at( run ) = 
                         copysign( 100 , vector_addition_throttle.at( run ) );
+            }
+            else if( equal( vector_addition_throttle.at( run ) , 0 ) )
+            {   
+                vector_addition_throttle.at( run ) = 0;
             }
             else if( fabs( vector_addition_throttle.at( run ) ) < 1  )
             {
@@ -299,7 +307,11 @@ send_throttle:
         srv_throttle.request.data = message_throttle.data;
 
         thruster_reported( thruster_state );
-        if( client_throttle.call( srv_throttle ) )
+        if( ! thruster_state )
+        {
+            ;
+        }
+        else if( client_throttle.call( srv_throttle ) )
         {
 #ifdef _PRINT_REPORT_
             print_reported( &vector_target_force , &vector_current_force,
@@ -308,10 +320,6 @@ send_throttle:
 #else
             ;
 #endif 
-        }
-        else if( ! thruster_state )
-        {
-            ;
         }
         else
         {
@@ -391,4 +399,5 @@ void thruster_reported( const bool state )
     {
         ;
     }
+    save_state = state;
 }

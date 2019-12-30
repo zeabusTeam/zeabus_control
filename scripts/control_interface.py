@@ -34,6 +34,7 @@ class ControlInterface :
 #   Section manage variable
         # Use save currunt state
         self.lock_state = allocate_lock()
+        self.lock_quaternion = allocate_lock()
         self.message_state = nm.odometry()
         self.current_velocity = [ 0 , 0 , 0 , 0 , 0 , 0 ]
         self.current_quaternion = Quaternion( ( 0 , 0 , 0 , 1 ) )
@@ -87,6 +88,16 @@ class ControlInterface :
             rate.sleep()
 
             self.get_error_position()
+
+            with self.lock_quaternion:
+                error_quaternion = Quaternion( ( self.error_state[ 0 ] .
+                        self.error_state[ 1 ] , 
+                        self.error_state[ 2 ] , 
+                        0 ) )
+                error_quaternion = self.current_quaternion.rotation( error_quaternion )
+            self.error_state[ 0 ] = error_quaternion[ 0 ]
+            self.error_state[ 1 ] = error_quaternion[ 1 ]
+            self.error_state[ 2 ] = error_quaternion[ 2 ]
 
             temp = []
             for run in range( 0 , 6 ):
@@ -157,7 +168,8 @@ class ControlInterface :
                 activate = True
 
         if ( self.time_stamp - self.time_stamp_state ).to_sec() < pm._TIMEOUT and not activate:
-            temp = self.current_quaternion.inverse_rotation( twist_quaternion.vector )
+            with self.lock_quaternion:
+                temp = self.current_quaternion.inverse_rotation( twist_quaternion.vector )
             self.current_velocity[ 0 ] = temp.vector[ 0 ]
             self.current_velocity[ 1 ] = temp.vector[ 1 ]
             self.current_velocity[ 2 ] = temp.vector[ 2 ]
@@ -187,12 +199,14 @@ class ControlInterface :
     def callback_state( self , message ):
         with self.lock_state:
             self.message_state = message
-        self.current_quaternion.set_quaternion( (
-                self.message_state.pose.pose.orientation.x,
-                self.message_state.pose.pose.orientation.y,
-                self.message_state.pose.pose.orientation.z,
-                self.message_state.pose.pose.orientation.w
-        ) )
+
+        with self.lock_quaternion:
+            self.current_quaternion.set_quaternion( (
+                    self.message_state.pose.pose.orientation.x,
+                    self.message_state.pose.pose.orientation.y,
+                    self.message_state.pose.pose.orientation.z,
+                    self.message_state.pose.pose.orientation.w
+            ) )
 
 #   End part callback function
 

@@ -90,7 +90,7 @@ class ControlInterface :
             self.get_error_position()
 
             with self.lock_quaternion:
-                error_quaternion = Quaternion( ( self.error_state[ 0 ] .
+                error_quaternion = Quaternion( ( self.error_state[ 0 ] ,
                         self.error_state[ 1 ] , 
                         self.error_state[ 2 ] , 
                         0 ) )

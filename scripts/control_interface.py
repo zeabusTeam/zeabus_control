@@ -78,7 +78,7 @@ class ControlInterface :
     def activate( self ):
         rate = rospy.Rate( 30 )
         self.output_odom_error.header.frame_id = "odom"
-        self.output_odom_error.mask = ( False , False , True , True , True , True )
+        self.output_odom_error.mask = ( True , True , True , True , True , True )
 
         self.odom_target_velocity.header.frame_id = "odom"
         self.odom_target_velocity.mask = ( False , False , True , True , True , True )

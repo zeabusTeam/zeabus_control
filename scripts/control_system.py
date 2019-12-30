@@ -120,8 +120,6 @@ class ControlSystem :
             self.time_stamp = rospy.get_rostime() # get current time
 
             if not self.activate_state:
-                print( "Status of control system are deactivate" )
-                rospy.sleep(  1.0 )
                 for key, run in _PARING_ORDER:
                     self.system[ key ].reset()
                 continue
@@ -189,9 +187,12 @@ class ControlSystem :
                 self.target_force_odom_frame[ 2 ], 
                 0 ) )
 
-        self.target_force_robot_frame[ 0 ] = robot_linear_force.vector[0]
-        self.target_force_robot_frame[ 1 ] = robot_linear_force.vector[1]
-        self.target_force_robot_frame[ 2 ] = robot_linear_force.vector[2]
+#        self.target_force_robot_frame[ 0 ] = robot_linear_force.vector[0]
+#        self.target_force_robot_frame[ 1 ] = robot_linear_force.vector[1]
+#        self.target_force_robot_frame[ 2 ] = robot_linear_force.vector[2]
+        self.target_force_robot_frame[ 0 ] = self.target_force_odom_frame[0]
+        self.target_force_robot_frame[ 1 ] = self.target_force_odom_frame[1]
+        self.target_force_robot_frame[ 2 ] = self.target_force_odom_frame[2]
         self.target_force_robot_frame[ 3 ] = self.target_force_odom_frame[ 3 ]
         self.target_force_robot_frame[ 4 ] = self.target_force_odom_frame[ 4 ]
         self.target_force_robot_frame[ 5 ] = self.target_force_odom_frame[ 5 ]

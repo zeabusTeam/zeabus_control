@@ -23,16 +23,16 @@ class TABLEZ( object ):
     TABLE_TARGET_VELOCITY = ( -0.5 , -0.25 , -0.1 , 0 , 0.1 , 0.25 , 0.5 )
 
 class TABLEROLL( object ):
-    TABLE_ERROR = ( -0.1 , -0.05 , -0.015 , 0.015 , 0.05 , 0.1 )
-    TABLE_TARGET_VELOCITY = ( -0.8 , -0.4 , -0.2 , 0 , 0.2 , 0.4 , 0.8 )
+    TABLE_ERROR = ( -0.3 , -0.15 , -0.05 , 0.05 , 0.15 , 0.3 )
+    TABLE_TARGET_VELOCITY = ( -0.4 , -0.2 , -0.1 , 0 , 0.1 , 0.2 , 0.4 )
 
 class TABLEPITCH( object ):
-    TABLE_ERROR = ( -0.1 , -0.05 , -0.015 , 0.015 , 0.5 , 0.1 )
-    TABLE_TARGET_VELOCITY = ( -0.8 , -0.4 , -0.2 , 0 , 0.2 , 0.4 , 0.8 )
+    TABLE_ERROR = ( -0.3 , -0.15 , -0.05 , 0.05 , 0.15 , 0.3 )
+    TABLE_TARGET_VELOCITY = ( -0.4 , -0.2 , -0.1 , 0 , 0.1 , 0.2 , 0.4 )
 
 class TABLEYAW( object ):
-    TABLE_ERROR = ( -0.1 , -0.05 , -0.02 , 0.02 , 0.05 , 0.1 )
-    TABLE_TARGET_VELOCITY = ( -0.8 , -0.4 , -0.2 , 0 , 0.2 , 0.4 , 0.8 )
+    TABLE_ERROR = ( -0.75 , -0.3 , -0.1 , -0.05 , 0.05 , 0.1 , 0.3 , 0.75)
+    TABLE_TARGET_VELOCITY = ( -0.8 , -0.4 , -0.2 , -0.1 , 0 , 0.1 , 0.2 , 0.4 , 0.8 )
 
 class StepVelocity:
     

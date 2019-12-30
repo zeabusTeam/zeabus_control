@@ -32,6 +32,7 @@ from constant import System as pm # parameter
 from constant import _PARING_ORDER 
 
 from zeabus_utility.msg import Int16Array8, ControlCommand, Float64Array8
+from zeabus_utility.srv import SendBool, SendBoolResponse
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 
@@ -75,7 +76,7 @@ class ControlSystem :
         
         self.sum_force = np.zeros( 6 )
 
-        self.activate = True # Start by activate
+        self.activate_state = True # Start by activate
 
 #   part manage variable in ros system
         self.subscribe_odom_error = rospy.Subscriber( 
@@ -103,9 +104,9 @@ class ControlSystem :
             Float64Array8,
             queue_size = 1 )
 
-        self.subscribe_activate = rospy.Subscriber(
+        self.server_activate_control = rospy.Service(
             pm._TOPIC_INPUT_ACTIVATE,
-            Bool,
+            SendBool,
             self.callback_activate 
         )
 
@@ -118,10 +119,10 @@ class ControlSystem :
             rate.sleep()
             self.time_stamp = rospy.get_rostime() # get current time
 
-            if not self.activate:
+            if not self.activate_state:
                 print( "Status of control system are deactivate" )
                 rospy.sleep(  1.0 )
-                for key, run in _PARING_ORDER
+                for key, run in _PARING_ORDER:
                     self.system[ key ].reset()
                 continue
 
@@ -309,8 +310,9 @@ class ControlSystem :
 
         return activate
 
-    def callback_activate( self , message ):
-        self.activate = message
+    def callback_activate( self , request ):
+        self.activate_state = request.data
+        return SendBoolResponse()
 #   end part of callback and load data
 
 if __name__=='__main__' :

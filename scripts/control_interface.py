@@ -100,7 +100,7 @@ class ControlInterface :
  
             if self.load_current_velocity():
                 for run in range( 0 , 6 ):
-                    if run != 2 :
+                    if run in ( 3 , 4 , 5 ) :
                         temp.append( self.odom_target_velocity.target[ run ] - 
                                 self.current_velocity[ run ] )
                     else:

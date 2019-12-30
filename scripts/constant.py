@@ -31,3 +31,4 @@ class System( object ):
     _TOPIC_INPUT_CURRENT_FORCE = "/control/force/current"
     _TOPIC_OUTPUT_TARGET_FORCE = "/control/force/target"
     _TOPIC_OUTPUT_COMMAND_THROTTLE = "/control/thruster/throttle"
+    _TOPIC_INPUT_ACTIVATE = "/activate"

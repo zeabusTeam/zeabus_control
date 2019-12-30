@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# FILE			: control_interface.py
+# FILE			: control_system.py
 # AUTHOR		: K.Supasan
 # CREATE ON		: 2019, December 14 (UTC+0)
 # MAINTAINER	: K.Supasan
@@ -33,6 +33,7 @@ from constant import _PARING_ORDER
 
 from zeabus_utility.msg import Int16Array8, ControlCommand, Float64Array8
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Bool
 
 class ControlSystem :
 
@@ -74,6 +75,8 @@ class ControlSystem :
         
         self.sum_force = np.zeros( 6 )
 
+        self.activate = True # Start by activate
+
 #   part manage variable in ros system
         self.subscribe_odom_error = rospy.Subscriber( 
             pm._TOPIC_INPUT_ERROR, 
@@ -100,6 +103,12 @@ class ControlSystem :
             Float64Array8,
             queue_size = 1 )
 
+        self.subscribe_activate = rospy.Subscriber(
+            pm._TOPIC_INPUT_ACTIVATE,
+            Bool,
+            self.callback_activate 
+        )
+
 #   Finish function constuctor and start function activate
 
     def activate( self ):
@@ -108,6 +117,13 @@ class ControlSystem :
         while not rospy.is_shutdown():
             rate.sleep()
             self.time_stamp = rospy.get_rostime() # get current time
+
+            if not self.activate:
+                print( "Status of control system are deactivate" )
+                rospy.sleep(  1.0 )
+                for key, run in _PARING_ORDER
+                    self.system[ key ].reset()
+                continue
 
             # load data from subscribe
             self.load_odom_error()
@@ -292,6 +308,9 @@ class ControlSystem :
             activate = False
 
         return activate
+
+    def callback_activate( self , message ):
+        self.activate = message
 #   end part of callback and load data
 
 if __name__=='__main__' :

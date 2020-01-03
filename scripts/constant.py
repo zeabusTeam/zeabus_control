@@ -29,6 +29,7 @@ class System( object ):
     _TOPIC_INPUT_ERROR = Interface._TOPIC_OUTPUT_ERROR
     _TOPIC_INPUT_STATE = Interface._TOPIC_INPUT_STATE
     _TOPIC_INPUT_CURRENT_FORCE = "/control/force/current"
+    _TOPIC_INPUT_ADDITION_FORCE = "/control/system/force"
     _TOPIC_OUTPUT_TARGET_FORCE = "/control/force/target"
     _TOPIC_OUTPUT_COMMAND_THROTTLE = "/control/thruster/throttle"
     _TOPIC_INPUT_ACTIVATE = "control/activate"

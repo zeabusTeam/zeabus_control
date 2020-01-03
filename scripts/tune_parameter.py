@@ -78,14 +78,15 @@ class TuneParameter:
         return self.data_config
 
     def report_configure( self ):
-        print( "----------------------------------------------------------")
-        print( "Type   |  P_value   |   I_value   |   D_value   |  S_value")
+        print( "------------------------------------------------------------------------")
+        print( "Type   |  P_value   |   I_value   |   D_value   |   S_value   |  O_value")
         for key in ( "x" , "y" , "z" , "roll" , "pitch" , "yaw" ):
-            print( "{0:<7}|{1:9.2f}   |{2:10.2f}   |{3:10.2f}   |{4:9.2f}".format( key, 
+            print( "{0:<7}|{1:9.2f}   |{2:10.2f}   |{3:10.2f}   |{4:10.2f}   |{5:9.2f}".format( key, 
                     self.data_config[ "p_" + key ],
                     self.data_config[ "i_" + key ],
                     self.data_config[ "d_" + key ],
-                    self.data_config[ "s_" + key ] ) )
+                    self.data_config[ "s_" + key ],
+                    self.data_config[ "offset_" + key ] ) )
         print( "sampling_time is " + str( self.data_config["sampling_time"] ) )
         print( "coefficients is " + str( self.data_config["coefficients"] ) )
         print( "---------------------------------------------")

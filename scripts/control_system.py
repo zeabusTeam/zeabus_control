@@ -135,6 +135,7 @@ class ControlSystem :
                  
                 real_force = np.matmul( real_force , robot.direction )
                 # Mapped robot frame to odom frame
+                # We must to delete addtion force to ensure remain only value form pid + offset
                 real_force[ 0 ] , real_force[ 1 ] , real_force[ 2 ] = ( 
                         self.robot_orientation.rotation( ( 
                                 real_force[0] - self.addition_force.data[ 0 ] , 

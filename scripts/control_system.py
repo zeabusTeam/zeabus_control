@@ -72,7 +72,7 @@ class ControlSystem :
         self.target_force_odom_frame = [ 0 , 0 , 0 , 0 , 0 , 0 ]
         self.target_force_robot_frame = [ 0 , 0 , 0 , 0 , 0 , 0 ]
 
-        self.saturation = [0 , 0 , 0 , 0 , 0 , 0 ]
+        self.real_force = [0 , 0 , 0 , 0 , 0 , 0 ]
         
         self.sum_force = np.zeros( 6 )
 
@@ -145,19 +145,20 @@ class ControlSystem :
                 )
 
                 for run in range( 0 , 6 ):
-                    self.saturation[ run ] = real_force[ run ]
+                    self.real_force[ run ] = real_force[ run ]
             else:
                 for run in range( 0 , 6 ):
-                    self.saturation[ run ] = None 
+                    self.real_force[ run ] = None 
 
 #   Put data to PID system
             for key , run in _PARING_ORDER :
                 if self.odom_error.mask[run ]:
                     self.target_force_odom_frame[ run ] =  self.system[ key ].calculate( 
                             self.odom_error.target[ run ], 
-                            self.saturation[ run ] )
+                            self.real_force[ run ] )
                 else:
-                    self.target_force_odom_frame[ run ] = 0
+                    self.target_force_odom_frame[ run ] = self.system[ key ].calculate( 
+                            self.odom_error.target[ run ] )
 
             self.calculate_force_thruster()
 
@@ -226,10 +227,10 @@ class ControlSystem :
                 self.target_force_robot_frame[0] , self.target_force_robot_frame[1] , 
                 self.target_force_robot_frame[2] , self.target_force_robot_frame[3] , 
                 self.target_force_robot_frame[4] , self.target_force_robot_frame[5] ) )
-        if self.saturation[ 0 ] != None :
+        if self.real_force[ 0 ] != None :
             print( "real force  :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format(
-                    self.saturation[0] , self.saturation[1] , self.saturation[2] , 
-                    self.saturation[3] , self.saturation[4] , self.saturation[5] ) )
+                    self.real_force[0] , self.real_force[1] , self.real_force[2] , 
+                    self.real_force[3] , self.real_force[4] , self.real_force[5] ) )
         else:
             print( "real force  : None Avaliable")
         print( "command     :{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}{:8.3f}".format(

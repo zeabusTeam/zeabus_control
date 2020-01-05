@@ -25,6 +25,7 @@ from constant import _PARING_ORDER
 
 from nav_msgs.msg import Odometry
 from zeabus_utility.msg import ControlCommand
+from zeabus_utility.srv import ServiceMask, ServiceMaskResponse
 
 class ControlInterface :
 
@@ -72,6 +73,12 @@ class ControlInterface :
                 pm._TOPIC_INPUT_STATE,
                 Odometry,
                 self.callback_state
+        )
+
+        self.server_mask_control = rospy.Service(
+                pm._TOPIC_INPUT_MASK,
+                ServiceMask,
+                self.callback_mask
         )
 
 #   end part constructor ControlInterface
@@ -207,6 +214,12 @@ class ControlInterface :
                     self.message_state.pose.pose.orientation.z,
                     self.message_state.pose.pose.orientation.w
             ) )
+
+    def callback_mask( self , request ):
+        if request.activate_mask :
+            self.output_odom_error.mask = request.target_mask
+        return ServiceMaskResponse( self.output_odom_error.mask )
+        
 
 #   End part callback function
 

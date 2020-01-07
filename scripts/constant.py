@@ -14,6 +14,7 @@ class Interface( object ):
     _TIMEOUT = 1.0
     _TOPIC_OUTPUT_ERROR = "control/system/error"
     _TOPIC_INPUT_STATE = "localize/zeabus"
+    _TOPIC_OUTPUT_RESET = "localize/reset"
     _TOPIC_INPUT_TARGET_VELOCITY = "control/interface/velocity"
     _TOPIC_INPUT_MASK = "control/mask"
     _RATE = 30

@@ -50,7 +50,7 @@ class ControlInterface :
         # Use time stamp before load
         self.time_stamp = rospy.get_rostime()
         # Use for send localize reset
-        self.message_reset = BoolArray6
+        self.message_reset = BoolArray6()
         self.message_reset.header.frame_id = "base_link"
 
         self.error_state = [ 0 , 0 , 0 , 0 , 0 , 0 ]
@@ -100,7 +100,7 @@ class ControlInterface :
 #   end part constructor ControlInterface
 
     def activate( self ):
-        rate = rospy.Rate( _pm.Rate )
+        rate = rospy.Rate( pm._RATE )
         self.output_odom_error.header.frame_id = "odom"
         self.output_odom_error.mask = ( True , True , True , True , True , True )
 
@@ -164,7 +164,7 @@ class ControlInterface :
         print( "ERROR_STATE :{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}{:6.2f}".format( 
                 self.error_state[0] , self.error_state[1] , self.error_state[2],
                 self.error_state[3] , self.error_state[4] , self.error_state[5] ) ) 
-        print( "VEL_MASK    :{:6}{:6}{:6}{:6}{:6}{:6}\n".format(
+        print( "VEL_MASK    :{:6}{:6}{:6}{:6}{:6}{:6}".format(
                 self.target_velocity.mask[0] , self.target_velocity.mask[1] , 
                 self.target_velocity.mask[2] , self.target_velocity.mask[3] , 
                 self.target_velocity.mask[4] , self.target_velocity.mask[5] ) )
@@ -233,6 +233,7 @@ class ControlInterface :
     # escape angular velocity is base_link frame
     def get_odom_target_velocity( self ):
         temp_quaternion = None
+        temp = [ 0. , 0., 0. , 0. , 0. , 0.]
         with self.lock_target_velocity:
             if( self.time_stamp - self.message_target_velocity.header.stamp ).to_sec() < 0.2 :
                 with self.lock_quaternion:
@@ -241,13 +242,13 @@ class ControlInterface :
                             self.message_target_velocity.target[1],
                             self.message_target_velocity.target[2],
                             0 ) )
-                self.target_velocity.target[ 4 : 6 ] = self.message_target_velocity.target[ 4 : 6 ]
+                temp[ 4 : 6] = self.message_target_velocity.target[ 4 : 6 ]
                 self.target_velocity.mask = self.message_target_velocity.mask
 
         # If temp_quaternion have value that mean you message not time out
         if temp_quaternion != None :
-            self.target_velocity.target[ 0 : 3 ] = temp_quaternion[ 0 : 3 ]
-
+            temp[ 0 : 3 ] = temp_quaternion[ 0 : 3 ]
+            self.target_velocity.target = tuple( temp )
             # prepare message for output reset
             self.message_reset.header.stamp = self.time_stamp
             self.message_reset.mask = self.target_velocity.mask 
@@ -275,6 +276,7 @@ class ControlInterface :
     def callback_target_velocity( self , message ):
         with self.lock_target_velocity:
             self.message_target_velocity = message
+            self.message_target_velocity.header.stamp = rospy.get_rostime()
         
 
 #   End part callback function

@@ -69,11 +69,18 @@ class ControlInterface :
                 ControlCommand,
                 queue_size = 1 )
 
-        self.subscribe_current_state = rospy.Subscriber(
+        self.subscriber_current_state = rospy.Subscriber(
                 pm._TOPIC_INPUT_STATE,
                 Odometry,
                 self.callback_state
         )
+
+        self.subscriber_target_velocity = rospy.Subscriber(
+                pm._TOPIC_INPUT_TARGET_VELOCITY,
+                ControlCommand,
+                self.callback_target_velocity
+        )
+
 
         self.server_mask_control = rospy.Service(
                 pm._TOPIC_INPUT_MASK,
@@ -84,7 +91,7 @@ class ControlInterface :
 #   end part constructor ControlInterface
 
     def activate( self ):
-        rate = rospy.Rate( 30 )
+        rate = rospy.Rate( _pm.Rate )
         self.output_odom_error.header.frame_id = "odom"
         self.output_odom_error.mask = ( True , True , True , True , True , True )
 

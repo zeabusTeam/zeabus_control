@@ -5,9 +5,10 @@
 # MAINTAINER	: K.Supasan
 
 # README
-#   This file will be interface to connect with other node
+#   This file will be use in main control
 
 # REFERENCE
+#   ref01 : http://docs.ros.org/api/rospy/html/rospy.impl.tcpros_service.ServiceProxy-class.html
 
 # PARAMETER
 __PRINT_REPORTER__ = True
@@ -32,7 +33,8 @@ from constant import System as pm # parameter
 from constant import _PARING_ORDER 
 
 from zeabus_utility.msg import Int16Array8, ControlCommand, Float64Array8 , Float64Array
-from zeabus_utility.srv import SendBool, SendBoolResponse
+from zeabus_utility.srv import SendBool, SendBoolResponse , ServiceBool
+from zeabus_utility.srv import ServiceBoolRequest
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 
@@ -108,6 +110,18 @@ class ControlSystem :
             pm._TOPIC_INPUT_ACTIVATE,
             SendBool,
             self.callback_activate )
+
+        temp_client = rospy.ServiceProxy( '/manager/swtich' , ServiceBool )
+        client_data = ServiceBoolRequest()
+        client_data.activate_data = False
+        try:
+            self.activate_state = temp_client.data
+            result = temp_client( client_data.header , client_data.activate_data , client_data.data )
+            print( "Start node with state : " + repr( self.activate_state ) )
+        except:
+            self.activate_state = True
+            print( "Start node with default state : True" )
+        temp_client.close()
 
 #   Finish function constuctor and start function activate
 

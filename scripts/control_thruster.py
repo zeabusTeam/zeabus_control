@@ -23,6 +23,7 @@ import zeabus_robot as robot
 from zeabus.ros import message as new_message
 
 _DIRECT_THROTTLE_ = False
+_PRINT_OUTPUT = True
 
 class BufferControl:
 
@@ -71,7 +72,8 @@ class BufferControl:
         rate = rospy.Rate( 30 )
         buffer_throttle_data = ( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 )
         active_throttle_data = buffer_throttle_data
-        print( "Output Data : " + repr( buffer_throttle_data) )
+        if _PRINT_OUTPUT : 
+            print( "Output Data : " + repr( buffer_throttle_data) )
         header = new_message.header( "base_link")
         message = new_message.int16_array8( buffer_throttle_data )
         force_message = Float64Array8()
@@ -109,6 +111,8 @@ class BufferControl:
         
     def send_throttle( self , header , buffer_throttle_data ):
         message = new_message.int16_array8( buffer_throttle_data )
+        if _PRINT_OUTPUT:
+            print( "Output Data : " + repr( buffer_throttle_data) )
         try:
             self.client_throttle( header , buffer_throttle_data )
             message.header = header

@@ -111,7 +111,7 @@ class ControlSystem :
             SendBool,
             self.callback_activate )
 
-        temp_client = rospy.ServiceProxy( '/manager/swtich' , ServiceBool )
+        temp_client = rospy.ServiceProxy( '/manager/switch' , ServiceBool )
         client_data = ServiceBoolRequest()
         client_data.activate_data = False
         try:

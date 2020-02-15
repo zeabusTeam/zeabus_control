@@ -126,7 +126,7 @@ class ControlInterface :
 
             # Load message from /control/interface/target
             self.get_odom_target_velocity()
-            # Next will prepare target velocity in body frame
+            # Next will prepare target velocity in inertial frame
             temp = []
             for run in range( 0 , 6 ):
                 if self.target_velocity.mask[ run ]:

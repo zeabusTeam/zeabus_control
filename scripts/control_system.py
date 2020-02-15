@@ -164,14 +164,15 @@ class ControlSystem :
                 for run in range( 0 , 6 ):
                     self.real_force[ run ] = None 
 
-#   Put data to PID system
+#   Put data to PID system of odom frame
+#   In case not want to control. We will use last value to return to output
             for key , run in _PARING_ORDER :
                 if self.odom_error.mask[run ]:
                     self.target_force_odom_frame[ run ] =  self.system[ key ].calculate( 
                             self.odom_error.target[ run ], 
                             self.real_force[ run ] )
                 else:
-                    self.target_force_odom_frame[ run ] = self.system[ key ].calculate( 
+                    self.target_force_odom_frame[ run ] = self.system[ key ].non_calculate( 
                             self.odom_error.target[ run ] )
 
             self.calculate_force_thruster()

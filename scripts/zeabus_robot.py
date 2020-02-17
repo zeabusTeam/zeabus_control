@@ -23,7 +23,8 @@ direction_linear = numpy.array([
     [cos_45, -sin_45 , 0 ],
     [cos_45, sin_45, 0 ],
     [-cos_45, -sin_45 , 0 ],
-    [-cos_45, sin_45 , 0 ]
+#    [-cos_45, sin_45 , 0 ]
+    [0 , 0 , 0]
 ])
 
 # set ditance from cg to individual thruster

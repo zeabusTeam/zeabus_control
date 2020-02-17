@@ -125,7 +125,7 @@ class ControlInterface :
             self.error_state[ 2 ] = error_quaternion[ 2 ]
 
             # Load message from /control/interface/target
-            self.get_odom_target_velocity()
+            self.get_target_velocity()
             # Next will prepare target velocity in inertial frame
             temp = []
             for run in range( 0 , 6 ):
@@ -231,9 +231,10 @@ class ControlInterface :
 
     # In case have message target velocity this will get and transform to odom velocity
     # escape angular velocity is base_link frame
-    def get_odom_target_velocity( self ):
+    def get_target_velocity( self ):
         temp_quaternion = None
         temp = [ 0. , 0., 0. , 0. , 0. , 0.]
+        frame = "base_link"
         with self.lock_target_velocity:
             if( self.time_stamp - self.message_target_velocity.header.stamp ).to_sec() < 0.2 :
                 with self.lock_quaternion:
@@ -242,12 +243,20 @@ class ControlInterface :
                             self.message_target_velocity.target[1],
                             self.message_target_velocity.target[2],
                             0 ) )
-                temp[ 4 : 6] = self.message_target_velocity.target[ 4 : 6 ]
+                if self.message_target_velocity.header.frame_id == "odom":
+                    temp[ 0 : 3 ] = temp_quaternion[ 0 : 3 ]
+                elif self.message_target_velocity.header.frame_id == "base_link":
+                    temp[ 0 : 3 ] = self.message_target_velocity.target[ 0 : 3 ]
+                else:
+                    print( "Target velocity don't assign frame. Auto to base_link")
+                    temp[ 0 : 3 ] = self.message_target_velocity.target[ 0 : 3 ]
+                     
+                temp[ 3 : 6] = self.message_target_velocity.target[ 3 : 6 ]
+                frame = self.message_target_velocity.header.frame_id
                 self.target_velocity.mask = self.message_target_velocity.mask
 
         # If temp_quaternion have value that mean you message not time out
         if temp_quaternion != None :
-            temp[ 0 : 3 ] = temp_quaternion[ 0 : 3 ]
             self.target_velocity.target = tuple( temp )
             # prepare message for output reset
             self.message_reset.header.stamp = self.time_stamp

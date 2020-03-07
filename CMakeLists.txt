@@ -12,6 +12,7 @@ find_package( catkin REQUIRED COMPONENTS
 
 find_package( Boost REQUIRED COMPONENTS )
 find_package( zeabus_library REQUIRED COMPONENTS )
+find_package( zeabus_elec_ros REQUIRED COMPONENTS )
 
 include_directories(
     ${catkin_INCLUDE_DIRS}
@@ -27,7 +28,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
     CATKIN_DEPENDS roscpp dynamic_reconfigure
-    DEPENDS Boost ${PROJECT_NAME}_gencfg zeabus_library
+    DEPENDS Boost ${PROJECT_NAME}_gencfg zeabus_library 
 )
 
 
